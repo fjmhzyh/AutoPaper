@@ -10,14 +10,15 @@ from urllib.parse import urlparse
 
 try:
     from core.app_config import get_config
+    from core import gui
     from core.browser_controller import BrowserController
     from core.logger import configure_logging
 except ModuleNotFoundError:
-    # Support direct script execution: `python3 core/resolve_doi_url.py ...`
     PROJECT_ROOT = Path(__file__).resolve().parents[1]
     if str(PROJECT_ROOT) not in sys.path:
         sys.path.insert(0, str(PROJECT_ROOT))
     from core.app_config import get_config
+    from core import gui
     from core.browser_controller import BrowserController
     from core.logger import configure_logging
 
@@ -26,6 +27,7 @@ logger = logging.getLogger(__name__)
 
 DEFAULT_PAGE_LOAD_SEC = 60.0
 CHECK_STABLE_INTERVAL_SEC = 0.3
+ACTION_INTERVAL_SEC = 0.2
 DOI_ORG_HOSTS = {"doi.org", "dx.doi.org", "www.doi.org"}
 
 
@@ -34,7 +36,7 @@ def resolve_doi_url(doi: str) -> str | None:
 
     normalized_doi = _normalize_doi(doi)
     if not normalized_doi:
-        logger.warning("resolve_doi_url skipped: empty DOI after normalization", extra={"doi": doi})
+        logger.warning("[地址解析] DOI为空，跳过执行")
         return None
 
     target_url = f"https://doi.org/{normalized_doi}"
@@ -44,45 +46,44 @@ def resolve_doi_url(doi: str) -> str | None:
         get_config().get_float("download.page_load_sec", default=DEFAULT_PAGE_LOAD_SEC),
     )
 
-    logger.info(
-        "resolve_doi_url started",
-        extra={"doi": normalized_doi, "target_url": target_url, "page_load_sec": page_load_sec},
-    )
+    logger.info(f"[地址解析] 开始解析 DOI - {normalized_doi}")
 
     try:
-        controller.ensure_ready()
-        controller.new_tab(target_url)
+        controller.open_tab(target_url)
+        logger.info("[地址解析] 打开网页成功")
+        logger.info(f"[地址解析] 等待网页加载{int(page_load_sec)}秒")
         time.sleep(page_load_sec)
 
-        loaded, resolved_url = check_page_loaded(controller)
+        loaded, resolved_url = check_page_loaded(_copy_current_tab_url)
         if loaded and resolved_url:
-            logger.info("resolve_doi_url success at first check", extra={"doi": normalized_doi, "url": resolved_url})
+            logger.info(f"[地址解析] 地址解析成功: {resolved_url}")
             return resolved_url
 
-        logger.info("resolve_doi_url first check failed, refreshing", extra={"doi": normalized_doi})
-        controller.refresh_page()
+        logger.info("[地址解析] 首次解析未稳定，执行刷新重试")
+        _refresh_page()
+        logger.info(f"[地址解析] 等待网页加载{int(page_load_sec)}秒")
         time.sleep(page_load_sec)
 
-        loaded, resolved_url = check_page_loaded(controller)
+        loaded, resolved_url = check_page_loaded(_copy_current_tab_url)
         if loaded and resolved_url:
-            logger.info("resolve_doi_url success after refresh", extra={"doi": normalized_doi, "url": resolved_url})
+            logger.info(f"[地址解析] 地址解析成功: {resolved_url}")
             return resolved_url
 
-        logger.warning("resolve_doi_url failed after retry", extra={"doi": normalized_doi})
+        logger.warning("[地址解析] 地址解析失败")
         return None
     except Exception as exc:
-        logger.exception("resolve_doi_url failed with exception", extra={"doi": normalized_doi, "error": str(exc)})
+        logger.exception(f"[地址解析] 执行异常: {exc}")
         return None
 
 
-def check_page_loaded(browser: BrowserController) -> tuple[bool, str | None]:
-    first_url = browser.copy_current_tab_url().strip()
+def check_page_loaded(read_current_url) -> tuple[bool, str | None]:
+    first_url = str(read_current_url() or "").strip()
     if not first_url:
         return False, None
 
     time.sleep(CHECK_STABLE_INTERVAL_SEC)
 
-    second_url = browser.copy_current_tab_url().strip()
+    second_url = str(read_current_url() or "").strip()
     if not second_url:
         return False, None
     if first_url != second_url:
@@ -90,6 +91,25 @@ def check_page_loaded(browser: BrowserController) -> tuple[bool, str | None]:
     if _is_doi_redirect_host(second_url):
         return False, None
     return True, second_url
+
+
+def _copy_current_tab_url() -> str:
+    gui.hotkey("focus_address_bar")
+    time.sleep(ACTION_INTERVAL_SEC)
+    gui.hotkey("copy")
+    time.sleep(ACTION_INTERVAL_SEC)
+    gui.press('esc')
+
+    try:
+        import pyperclip  # type: ignore
+    except ModuleNotFoundError as exc:
+        raise RuntimeError("pyperclip is not installed") from exc
+    return str(pyperclip.paste() or "")
+
+
+def _refresh_page() -> None:
+    gui.hotkey("refresh_page")
+    time.sleep(ACTION_INTERVAL_SEC)
 
 
 def _normalize_doi(value: str | None) -> str:

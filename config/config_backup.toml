@@ -28,6 +28,5 @@ auto_refresh_sec = 0
 theme = "light"
 
 [browser]
-prefer = "chrome"
 launch_wait_sec = 3
 action_interval_sec = 0.2

@@ -3,7 +3,7 @@ name = "AutoPaper"
 language = "zh-CN"
 
 [download]
-page_load_sec = 60
+page_load_sec = 12
 doi_download_interval_sec = 30
 paper_download_retry_times = 3
 
@@ -15,6 +15,5 @@ zju_password = ""
 theme = "light"
 
 [browser]
-prefer = "chrome"
 launch_wait_sec = 3
 action_interval_sec = 0.2

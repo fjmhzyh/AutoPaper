@@ -54,11 +54,17 @@ def configure_logging(level: int = logging.INFO, force: bool = False) -> None:
     root_logger = logging.getLogger()
     if root_logger.handlers and not force:
         root_logger.setLevel(level)
+        formatter = logging.Formatter("%(asctime)s %(message)s", datefmt="%Y-%m-%d %H:%M:%S")
+        for handler in root_logger.handlers:
+            try:
+                handler.setFormatter(formatter)
+            except Exception:
+                continue
         return
 
     logging.basicConfig(
         level=level,
-        format="%(asctime)s [%(levelname)s] %(name)s - %(message)s",
+        format="%(asctime)s %(message)s",
         datefmt="%Y-%m-%d %H:%M:%S",
         force=force,
     )

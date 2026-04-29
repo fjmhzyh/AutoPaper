@@ -1,1 +1,4 @@
-DOI,DownloaStatus,SIDownloadStatus,PublisherUrl,PaperFile,SIFile,HtmlFile, PaperDownloadUrl, SIDownloadUrl
+﻿DOI,DownloaStatus,SIDownloadStatus,failedReason,PublisherUrl,PaperFile,SIFile,HtmlFile,PaperDownloadUrl,failedReason
+10.1002/9781118676684.ch8,success,,,,,,,,
+10.3390/jfb14040183,success,,,,,,,,
+10.3390/polym17131761,success,,,,,,,,
