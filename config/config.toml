@@ -1,0 +1,20 @@
+[app]
+name = "AutoPaper"
+language = "zh-CN"
+
+[download]
+page_load_sec = 60
+doi_download_interval_sec = 30
+paper_download_retry_times = 3
+
+[login]
+zju_username = ""
+zju_password = ""
+
+[gui]
+theme = "light"
+
+[browser]
+prefer = "chrome"
+launch_wait_sec = 3
+action_interval_sec = 0.2

@@ -1,0 +1,5 @@
+﻿taskName,status,totalCount,paperSuccessCount,paperFailedCount,siSuccessCount,createTime,updateTime
+task_2025_0909_1321,finished,10,6,2,0,2025-09-09 13:21,2025-09-09 15:21
+task_2025_1209_1321,finished,10,8,2,0,2025-09-09 13:21,2025-09-09 15:21
+tasks_2026_0428_1021,pending,1068,0,0,0,2026-04-28 10:21,2026-04-28 10:21
+tasks_2026_0428_1023,pending,1068,0,0,0,2026-04-28 10:23,2026-04-28 10:23
