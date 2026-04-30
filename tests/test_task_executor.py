@@ -18,9 +18,9 @@ class TaskExecutorTests(unittest.TestCase):
             task_path = tasks_dir / "task_demo.csv"
             task_path.write_text(
                 (
-                    "DOI,DownloaStatus,PaperFile,SIFile,htmlFile\n"
-                    "10.1000/a,,,\n"
-                    "10.1000/b,,,\n"
+                    "DOI,DownloaStatus,SIDownloadStatus,failedReason,PublisherUrl,PaperFile,SIFile,HtmlFile,PaperDownloadUrl\n"
+                    "10.1000/a,,,,,,,,\n"
+                    "10.1000/b,,,,,,,,\n"
                 ),
                 encoding="utf-8",
             )
@@ -66,10 +66,10 @@ class TaskExecutorTests(unittest.TestCase):
             task_path = tasks_dir / "task_done.csv"
             task_path.write_text(
                 (
-                    "DOI,DownloaStatus,PaperFile,SIFile,htmlFile\n"
-                    "10.1000/a,success,,,\n"
-                    "10.1000/b,failed,,,\n"
-                    "10.1000/c,,,\n"
+                    "DOI,DownloaStatus,SIDownloadStatus,failedReason,PublisherUrl,PaperFile,SIFile,HtmlFile,PaperDownloadUrl\n"
+                    "10.1000/a,success,,,,,,,\n"
+                    "10.1000/b,failed,,,,,,,\n"
+                    "10.1000/c,,,,,,,,\n"
                 ),
                 encoding="utf-8",
             )
@@ -103,9 +103,9 @@ class TaskExecutorTests(unittest.TestCase):
             task_path = tasks_dir / "task_login.csv"
             task_path.write_text(
                 (
-                    "DOI,DownloaStatus,PaperFile,SIFile,htmlFile\n"
-                    "10.1000/a,,,\n"
-                    "10.1000/b,,,\n"
+                    "DOI,DownloaStatus,SIDownloadStatus,failedReason,PublisherUrl,PaperFile,SIFile,HtmlFile,PaperDownloadUrl\n"
+                    "10.1000/a,,,,,,,,\n"
+                    "10.1000/b,,,,,,,,\n"
                 ),
                 encoding="utf-8",
             )
@@ -129,6 +129,52 @@ class TaskExecutorTests(unittest.TestCase):
             content = task_path.read_text(encoding="utf-8-sig")
             self.assertIn("10.1000/a,failed", content)
             self.assertIn("10.1000/b,success", content)
+
+    def test_run_writes_absolute_paths_for_paper_and_si_files(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            tasks_dir = root / "tasks"
+            tasks_dir.mkdir(parents=True, exist_ok=True)
+
+            task_path = tasks_dir / "task_path.csv"
+            task_path.write_text(
+                (
+                    "DOI,DownloaStatus,SIDownloadStatus,failedReason,PublisherUrl,PaperFile,SIFile,HtmlFile,PaperDownloadUrl\n"
+                    "10.1000/a,,,,,,,,\n"
+                ),
+                encoding="utf-8",
+            )
+            (root / "statistic.csv").write_text(
+                (
+                    "taskName,status,totalCount,paperSuccessCount,paperFailedCount,siSuccessCount,createTime,updateTime\n"
+                    "task_path,pending,1,0,0,0,2026-01-01 00:00,2026-01-01 00:00\n"
+                ),
+                encoding="utf-8",
+            )
+
+            executor = TaskExecutor(project_root=root)
+            with (
+                patch("core.task_executor.resolve_doi_url", return_value="https://publisher.com/a"),
+                patch("core.task_executor.login_by_url", return_value=True),
+                patch("core.task_executor.get_html_content", return_value="<html>a</html>"),
+                patch(
+                    "core.task_executor.download_by_url",
+                    return_value={
+                        "paper_ok": True,
+                        "si_ok": True,
+                        "paper_download_url": "https://publisher.com/pdf",
+                        "paper_file": "download/task_path/paper/paper_01_10.1000_a.pdf",
+                        "si_file": "download/task_path/si/si_01_10.1000_a.pdf",
+                        "failed_reason": "",
+                    },
+                ),
+                patch("core.task_executor.time.sleep", return_value=None),
+            ):
+                executor.run("task_path")
+
+            content = task_path.read_text(encoding="utf-8-sig")
+            self.assertIn(str((root / "download/task_path/paper/paper_01_10.1000_a.pdf").resolve()), content)
+            self.assertIn(str((root / "download/task_path/si/si_01_10.1000_a.pdf").resolve()), content)
 
 
 if __name__ == "__main__":

@@ -11,12 +11,13 @@ from tkinter import messagebox, ttk
 DETAIL_COLUMNS = (
     "DOI",
     "DownloaStatus",
-    "PaperFile",
-    "PaperDownloadUrl",
     "SIDownloadStatus",
+    "failedReason",
+    "PublisherUrl",
+    "PaperFile",
     "SIFile",
-    "SIDownloadUrl",
-    "htmlFile",
+    "HtmlFile",
+    "PaperDownloadUrl",
 )
 TREE_COLUMNS = ("序号",) + DETAIL_COLUMNS
 
@@ -275,17 +276,18 @@ class TaskDetailTab(tk.Frame):
             "序号": 70,
             "DOI": 220,
             "DownloaStatus": 130,
-            "PaperFile": 160,
-            "PaperDownloadUrl": 220,
             "SIDownloadStatus": 150,
+            "failedReason": 180,
+            "PublisherUrl": 220,
+            "PaperFile": 160,
             "SIFile": 140,
-            "SIDownloadUrl": 220,
-            "htmlFile": 180,
+            "HtmlFile": 180,
+            "PaperDownloadUrl": 220,
         }
         for col in TREE_COLUMNS:
             anchor = (
                 "w"
-                if col in {"DOI", "PaperFile", "PaperDownloadUrl", "SIFile", "SIDownloadUrl", "htmlFile"}
+                if col in {"DOI", "failedReason", "PublisherUrl", "PaperFile", "SIFile", "HtmlFile", "PaperDownloadUrl"}
                 else "center"
             )
             self.detail_tree.heading(col, text=col, anchor=anchor)
@@ -369,6 +371,8 @@ class TaskDetailTab(tk.Frame):
                     normalized_row = {}
                     for old_key, value in raw.items():
                         normalized_row[field_map.get(old_key, old_key)] = str(value or "").strip()
+                    if "HtmlFile" not in normalized_row and "htmlFile" in normalized_row:
+                        normalized_row["HtmlFile"] = normalized_row.get("htmlFile", "")
                     rows.append(tuple(normalized_row.get(column, "") for column in DETAIL_COLUMNS))
         except Exception:
             return []

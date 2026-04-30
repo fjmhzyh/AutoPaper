@@ -1,4 +1,2 @@
-﻿DOI,DownloaStatus,SIDownloadStatus,failedReason,PublisherUrl,PaperFile,SIFile,HtmlFile,PaperDownloadUrl,failedReason
-10.1002/9781118676684.ch8,success,,,,,,,,
-10.3390/jfb14040183,success,,,,,,,,
-10.3390/polym17131761,success,,,,,,,,
+﻿DOI,DownloaStatus,SIDownloadStatus,failedReason,PublisherUrl,PaperFile,SIFile,HtmlFile,PaperDownloadUrl
+10.1002/jcb.26835,success,failed,,https://onlinelibrary.wiley.com/doi/10.1002/jcb.26835,download/task_2026_0423_1322/paper/paper_01_10.1002_jcb.26835.pdf,,,https://onlinelibrary.wiley.com/doi/pdfdirect/10.1002/jcb.26835?download=true

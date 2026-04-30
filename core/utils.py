@@ -60,7 +60,7 @@ def _locate_on_screen(image_path: str, confidence: float):
     return pyautogui.locateOnScreen(image_path, confidence=confidence)
 
 
-def search_keyword_and_clear(self, keyword)->None:
+def search_keyword_and_clear(keyword)->None:
     gui.hotkey('search')
     time.sleep(1) 
     # 3. 输入搜索内容
@@ -70,7 +70,7 @@ def search_keyword_and_clear(self, keyword)->None:
     gui.press('backspace',presses=len(keyword), interval=0.1)
     gui.press('esc')
 
-def search_keyword_and_foucus(self, keyword)->None:
+def search_keyword_and_foucus(keyword)->None:
     gui.hotkey('search')
     time.sleep(1) 
     # 3. 输入搜索内容
@@ -85,6 +85,16 @@ def get_html_content(wait_sec: float = 5.0) -> str:
     time.sleep(max(0.0, float(wait_sec)))
     gui.hotkey("select_all")
     gui.hotkey("copy")
+    gui.hotkey("close_tab")
+    return _read_clipboard()
+
+
+def get_current_url() -> str:
+    gui.hotkey("focus_address_bar")
+    time.sleep(0.5)
+    gui.hotkey("copy")
+    time.sleep(1)
+    gui.press("esc")
     return _read_clipboard()
 
 

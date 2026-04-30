@@ -11,12 +11,13 @@ from core.csv_manager import CSVManager
 TASK_FIELDNAMES = [
     "DOI",
     "DownloaStatus",
-    "PaperFile",
-    "PaperDownloadUrl",
     "SIDownloadStatus",
+    "failedReason",
+    "PublisherUrl",
+    "PaperFile",
     "SIFile",
-    "SIDownloadUrl",
-    "htmlFile",
+    "HtmlFile",
+    "PaperDownloadUrl",
 ]
 
 STATISTIC_FIELDNAMES = [
@@ -167,12 +168,13 @@ class TaskManager:
                 {
                     "DOI": doi,
                     "DownloaStatus": "",
-                    "PaperFile": "",
-                    "PaperDownloadUrl": "",
                     "SIDownloadStatus": "",
+                    "failedReason": "",
+                    "PublisherUrl": "",
+                    "PaperFile": "",
                     "SIFile": "",
-                    "SIDownloadUrl": "",
-                    "htmlFile": "",
+                    "HtmlFile": "",
+                    "PaperDownloadUrl": "",
                 }
             )
 

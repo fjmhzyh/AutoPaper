@@ -2,12 +2,26 @@ from __future__ import annotations
 
 import unittest
 from types import SimpleNamespace
-from unittest.mock import patch
+from unittest.mock import call, patch
 
 from core import utils
 
 
 class UtilsPlaceholderTests(unittest.TestCase):
+    def test_get_current_url_uses_expected_steps(self) -> None:
+        with (
+            patch("core.utils.gui.hotkey") as hotkey_mock,
+            patch("core.utils.gui.press") as press_mock,
+            patch("core.utils.time.sleep", return_value=None) as sleep_mock,
+            patch("core.utils._read_clipboard", return_value="https://example.com/paper"),
+        ):
+            url = utils.get_current_url()
+
+        self.assertEqual(url, "https://example.com/paper")
+        self.assertEqual(hotkey_mock.call_args_list, [call("focus_address_bar"), call("copy")])
+        self.assertEqual(sleep_mock.call_args_list, [call(0.5), call(1)])
+        press_mock.assert_called_once_with("esc")
+
     def test_check_keywords_exist_returns_case_insensitive_matches(self) -> None:
         hotkey_calls: list[str] = []
         with (

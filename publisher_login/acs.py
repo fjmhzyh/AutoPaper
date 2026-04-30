@@ -17,34 +17,36 @@ def login(resolved_url: str) -> bool:
         return True
 
     logger.info("[网站登陆] 执行 ACS 登录流程")
-    access_through, zhejiang_university, open_pdf = utils.check_keywords_exist(
-        ["access through", "zhejiang uniersity", "open pdf"]
+    access_through, zhejiang_university, open_pdf,access_through_institution= utils.check_keywords_exist(
+        ["access through", "zhejiang university", "open pdf", 'access through your institution']
     )
 
+    # 半登陆状态
     if access_through and zhejiang_university:
-        if _click_login_btn():
-            time.sleep(15)
-            _press("enter")
-            time.sleep(10)
-            return True
-        return False
+        utils.search_keyword_and_foucus('zhejiang university')
+        gui.press('enter',2,0.2)
+        time.sleep(20)
+        gui.press("enter")
+        time.sleep(10)
+        return True
 
-    if access_through and not open_pdf:
-        if _click_login_btn():
-            time.sleep(30)
-            utils.search_keyword("Search By University")
-            _press("tab")
-            gui.hotkey("shift_tab")
-            gui.write("Zhejiang University", interval=0.1)
-            time.sleep(3)
-            _press("down", 1, 0.2)
-            _press("enter", 1, 0.2)
-            logger.info("[网站登陆] 等待跳转到浙大登陆页")
-            time.sleep(15)
-            _press("enter")
-            time.sleep(20)
-            return True
-        return False
+    # 未登陆状态
+    if access_through_institution and not zhejiang_university:
+        utils.search_keyword_and_foucus('access through your institution')
+        gui.press('enter',2,0.2)
+        time.sleep(30)
+        utils.search_keyword("Search By University")
+        gui.press("tab")
+        gui.hotkey("shift_tab")
+        gui.write("Zhejiang University", interval=0.1)
+        time.sleep(3)
+        gui.press("down", 1, 0.2)
+        gui.press("enter", 1, 0.2)
+        logger.info("[网站登陆] 等待跳转到浙大登陆页")
+        time.sleep(15)
+        gui.press("enter")
+        time.sleep(20)
+        return True
 
     logger.info("[网站登陆] 当前文章无需登陆")
     return True
@@ -58,16 +60,10 @@ def _click_login_btn() -> bool:
         logger.info("[网站登陆] 未找到 ACS 登录按钮，尝试关键字登录")
         utils.search_keyword("access through")
         time.sleep(0.5)
-        _press("esc", 1, 1)
-        _press("enter", 2, 1)
+        gui.press("esc", 1, 1)
+        gui.press("enter", 2, 1)
         return True
 
     gui.click(button_pos)
     return True
 
-
-def _press(key: str, times: int = 1, interval: float = 0.0) -> None:
-    for _ in range(max(1, times)):
-        gui.press(key)
-        if interval > 0:
-            time.sleep(interval)

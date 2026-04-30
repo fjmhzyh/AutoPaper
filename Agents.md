@@ -14,7 +14,7 @@ def _read_page_load_sec() -> float:
 
 # 重要提示
 1. 每次改代码前，先和我确认实现方案，得到肯定答复后再开始改代码
-2. 不要使用任何osascript
+2. 所有的实现必须兼容mac和win，不要使用任何osascript
 
 
 # 日志格式
@@ -43,3 +43,11 @@ def _read_page_load_sec() -> float:
 6. 检测下载结果
 7. 将结果写入csv文件
 8. 执行等待间隔，开启下一轮
+
+
+# 下载目录
+1. 开发态（源码运行）：<project_root>/download
+2. 打包态（pyinstaller 打成exe或者dmg安装后
+mac: ~/Library/Application Support/AutoPaper/download
+win: %LOCALAPPDATA%\\AutoPaper\\download
+3. download目录下按任务名划分，任务名下分别有html,paper,si3个文件夹

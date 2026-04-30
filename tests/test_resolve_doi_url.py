@@ -13,7 +13,7 @@ class ResolveDoiUrlTests(unittest.TestCase):
     def test_resolve_success_on_first_check(self) -> None:
         with (
             patch("core.resolve_doi_url.BrowserController") as controller_cls,
-            patch("core.resolve_doi_url._copy_current_tab_url", side_effect=[
+            patch("core.resolve_doi_url.get_current_url", side_effect=[
                 "https://publisher.com/paper/123",
                 "https://publisher.com/paper/123",
             ]),
@@ -29,7 +29,7 @@ class ResolveDoiUrlTests(unittest.TestCase):
     def test_resolve_success_after_refresh(self) -> None:
         with (
             patch("core.resolve_doi_url.BrowserController") as controller_cls,
-            patch("core.resolve_doi_url._copy_current_tab_url", side_effect=[
+            patch("core.resolve_doi_url.get_current_url", side_effect=[
                 "https://doi.org/10.1000/xyz",
                 "https://doi.org/10.1000/xyz",
                 "https://publisher.com/final",
@@ -47,7 +47,7 @@ class ResolveDoiUrlTests(unittest.TestCase):
     def test_resolve_returns_none_after_retry(self) -> None:
         with (
             patch("core.resolve_doi_url.BrowserController") as controller_cls,
-            patch("core.resolve_doi_url._copy_current_tab_url", side_effect=[
+            patch("core.resolve_doi_url.get_current_url", side_effect=[
                 "https://doi.org/10.1000/xyz",
                 "https://doi.org/10.1000/xyz",
                 "https://doi.org/10.1000/xyz",
@@ -99,7 +99,7 @@ class ResolveDoiUrlTests(unittest.TestCase):
             temp_cfg = AppConfig(config_path)
             with (
                 patch("core.resolve_doi_url.BrowserController"),
-                patch("core.resolve_doi_url._copy_current_tab_url", side_effect=[
+                patch("core.resolve_doi_url.get_current_url", side_effect=[
                     "https://publisher.com/x",
                     "https://publisher.com/x",
                 ]),

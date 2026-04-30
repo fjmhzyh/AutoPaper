@@ -16,7 +16,7 @@ class FetchPageSourceTests(unittest.TestCase):
         ):
             content = get_html_content(5)
 
-        self.assertEqual(calls, ["view_source", "select_all", "copy"])
+        self.assertEqual(calls, ["view_source", "select_all", "copy", "close_tab"])
         self.assertEqual(content, "<html>demo</html>")
 
 

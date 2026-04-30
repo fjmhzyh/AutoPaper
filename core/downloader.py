@@ -1,2 +1,173 @@
 
-# 通用文件下载器（流式下载、重试）
+from __future__ import annotations
+
+import os
+import re
+import shutil
+import sys
+import time
+from pathlib import Path
+
+from core import gui
+
+PARTIAL_SUFFIXES = {".crdownload", ".part", ".download", ".tmp"}
+
+
+def default_download_dir() -> Path:
+    return Path.home() / "Downloads"
+
+
+def snapshot_download_names(download_dir: str | Path | None = None) -> set[str]:
+    folder = Path(download_dir) if download_dir else default_download_dir()
+    if not folder.exists():
+        return set()
+    return {item.name for item in folder.iterdir() if item.is_file()}
+
+
+def move_latest_download_to_task(
+    *,
+    project_root: str | Path,
+    task_name: str,
+    subfolder: str,
+    doi: str,
+    item_index: int,
+    prefix: str,
+    before_names: set[str] | None = None,
+    timeout_sec: float = 60.0,
+    poll_sec: float = 0.5,
+    download_dir: str | Path | None = None,
+) -> str | None:
+    folder = Path(download_dir) if download_dir else default_download_dir()
+    if not folder.exists() or not folder.is_dir():
+        return None
+
+    previous = before_names or set()
+    deadline = time.time() + max(0.0, float(timeout_sec))
+    source = _wait_new_file(folder, previous, deadline, max(0.1, float(poll_sec)))
+    if source is None:
+        return None
+
+    root = Path(project_root).resolve()
+    target_dir = resolve_download_root(root) / str(task_name).strip() / str(subfolder).strip()
+    target_dir.mkdir(parents=True, exist_ok=True)
+
+    suffix = source.suffix or ".pdf"
+    safe_doi = _normalize_doi_for_name(doi)
+    base_name = f"{prefix}_{max(1, int(item_index)):02d}_{safe_doi}{suffix}"
+    target = _dedupe_target(target_dir, base_name)
+    shutil.move(str(source), str(target))
+
+    return _to_output_path(root, target)
+
+
+def print_download(
+    *,
+    project_root: str | Path,
+    task_name: str,
+    subfolder: str,
+    doi: str,
+    item_index: int,
+    prefix: str,
+) -> str | None:
+    root = Path(project_root).resolve()
+    target_dir = resolve_download_root(root) / str(task_name).strip() / str(subfolder).strip()
+    target_dir.mkdir(parents=True, exist_ok=True)
+
+
+    safe_doi = _normalize_doi_for_name(doi)
+    filename = f"{prefix}_{max(1, int(item_index)):02d}_{safe_doi}.pdf"
+    target = _dedupe_target(target_dir, filename)
+
+    time.sleep(20)
+
+    gui.hotkey("print_page")
+    time.sleep(5)
+    gui.press("enter")
+    time.sleep(5)
+    gui.hotkey("select_all")
+    time.sleep(1)
+    gui.write(str(target), interval=0.03)
+
+    time.sleep(2)
+    gui.press("enter")
+    time.sleep(1)
+    gui.press("enter", presses=3, interval=0.2)
+    gui.hotkey('close_tab')
+    if not _wait_file_exists(target, timeout_sec=20, poll_sec=0.5):
+        return None
+    return _to_output_path(root, target)
+
+
+def resolve_download_root(project_root: str | Path) -> Path:
+    root = Path(project_root).resolve()
+    if getattr(sys, "frozen", False):
+        return _packaged_download_root()
+    return root / "download"
+
+
+def _wait_new_file(folder: Path, previous: set[str], deadline: float, poll_sec: float) -> Path | None:
+    while time.time() <= deadline:
+        candidates = []
+        for item in folder.iterdir():
+            if not item.is_file():
+                continue
+            if item.name in previous:
+                continue
+            if item.suffix.lower() in PARTIAL_SUFFIXES:
+                continue
+            candidates.append(item)
+        if candidates:
+            return max(candidates, key=lambda p: p.stat().st_mtime)
+        time.sleep(poll_sec)
+    return None
+
+
+def _wait_file_exists(path: Path, timeout_sec: float, poll_sec: float) -> bool:
+    deadline = time.time() + max(0.0, float(timeout_sec))
+    wait_sec = max(0.1, float(poll_sec))
+    while time.time() <= deadline:
+        if path.exists() and path.is_file():
+            return True
+        time.sleep(wait_sec)
+    return False
+
+
+def _normalize_doi_for_name(doi: str) -> str:
+    text = str(doi or "").strip()
+    if not text:
+        return "unknown_doi"
+    normalized = re.sub(r"[^0-9A-Za-z._-]+", "_", text)
+    normalized = normalized.strip("._-")
+    return normalized or "unknown_doi"
+
+
+def _dedupe_target(folder: Path, filename: str) -> Path:
+    target = folder / filename
+    if not target.exists():
+        return target
+
+    stem = target.stem
+    suffix = target.suffix
+    index = 1
+    while True:
+        candidate = folder / f"{stem}_{index}{suffix}"
+        if not candidate.exists():
+            return candidate
+        index += 1
+
+
+def _packaged_download_root() -> Path:
+    if sys.platform == "darwin":
+        return Path.home() / "Library" / "Application Support" / "AutoPaper" / "download"
+    if sys.platform.startswith("win"):
+        local_app = os.environ.get("LOCALAPPDATA", "")
+        base = Path(local_app) if local_app else (Path.home() / "AppData" / "Local")
+        return base / "AutoPaper" / "download"
+    return Path.home() / ".autopaper" / "download"
+
+
+def _to_output_path(project_root: Path, target: Path) -> str:
+    try:
+        return str(target.relative_to(project_root)).replace("\\", "/")
+    except ValueError:
+        return str(target).replace("\\", "/")

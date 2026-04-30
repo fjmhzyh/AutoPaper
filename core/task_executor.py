@@ -12,6 +12,7 @@ try:
     from core.app_config import get_config
     from core.csv_manager import CSVManager
     from core.logger import configure_logging
+    from publisher_download.router import download_by_url
     from publisher_login.router import login_by_url
     from core.resolve_doi_url import resolve_doi_url
     from core.task_manager import STATISTIC_FIELDNAMES
@@ -23,6 +24,7 @@ except ModuleNotFoundError:
     from core.app_config import get_config
     from core.csv_manager import CSVManager
     from core.logger import configure_logging
+    from publisher_download.router import download_by_url
     from publisher_login.router import login_by_url
     from core.resolve_doi_url import resolve_doi_url
     from core.task_manager import STATISTIC_FIELDNAMES
@@ -34,10 +36,13 @@ logger = logging.getLogger(__name__)
 TASK_FIELD_ALIASES = {
     "doi": ["DOI"],
     "status": ["DownloaStatus"],
+    "si_status": ["SIDownloadStatus"],
     "failed_reason": ["failedReason", "FailedReason"],
+    "publisher_url": ["PublisherUrl"],
     "paper_file": ["PaperFile"],
     "si_file": ["SIFile"],
-    "html_file": ["htmlFile", "HtmlFile"],
+    "html_file": ["HtmlFile", "htmlFile"],
+    "paper_download_url": ["PaperDownloadUrl"],
 }
 
 
@@ -83,6 +88,7 @@ class TaskExecutor:
                     doi,
                     {
                         fields["status"]: "failed",
+                        fields["si_status"]: "failed",
                         fields["failed_reason"]: "网页无法打开",
                     },
                 )
@@ -105,22 +111,45 @@ class TaskExecutor:
                     logger.warning(f"[源码获取] 获取网页源码失败: {exc}")
             else:
                 logger.info("[源码获取] 未获取到可用地址或登录失败，跳过源码获取")
-            self.publisher_download_stub(resolved_url or "", html_content, doi)
+            download_result = self.publisher_download(
+                resolved_url or "",
+                html_content,
+                doi,
+                task_name=task_name,
+                item_index=index,
+            ) if login_ok else {
+                "paper_ok": False,
+                "si_ok": False,
+                "paper_download_url": "",
+                "paper_file": "",
+                "si_file": "",
+                "failed_reason": "登录失败",
+            }
             self.check_result_stub(doi)
 
-            ok = bool(login_ok) and bool(html_ok)
+            paper_ok = bool(download_result.get("paper_ok"))
+            si_ok = bool(download_result.get("si_ok"))
+            ok = bool(login_ok) and bool(paper_ok)
             status_text = "success" if ok else "failed"
+            failed_reason = ""
+            if not ok:
+                failed_reason = str(download_result.get("failed_reason", "") or "").strip() or "处理失败"
+            elif not html_ok:
+                failed_reason = "源码获取失败"
             updates = {
                 fields["status"]: status_text,
-                fields["failed_reason"]: "" if ok else "处理失败",
-                fields["paper_file"]: "",
-                fields["si_file"]: "",
+                fields["si_status"]: "success" if si_ok else "failed",
+                fields["failed_reason"]: failed_reason,
+                fields["publisher_url"]: resolved_url,
+                fields["paper_file"]: self._to_absolute_path(download_result.get("paper_file", "")),
+                fields["si_file"]: self._to_absolute_path(download_result.get("si_file", "")),
                 fields["html_file"]: "",
+                fields["paper_download_url"]: str(download_result.get("paper_download_url", "") or ""),
             }
             task_csv.update_by(fields["doi"], doi, updates)
 
-            paper_status = "成功" if ok else "失败"
-            si_status = "成功" if ok else "失败"
+            paper_status = "成功" if paper_ok else "失败"
+            si_status = "成功" if si_ok else "失败"
             logger.info(f"[执行结果] 第{index}条执行结束：论文下载-{paper_status}， si下载-{si_status}")
 
             if index < total:
@@ -138,10 +167,24 @@ class TaskExecutor:
             failed_count=failed_count,
         )
 
-    def publisher_download_stub(self, _url: str, _html: str, _doi: str) -> dict[str, Any]:
-        logger.info("[论文下载] 正在执行论文下载 - 占位实现")
-        logger.info("[资料下载] 正在执行si下载 - 占位实现")
-        return {"paper_ok": False, "si_ok": False, "paper_file": "", "si_file": ""}
+    def publisher_download(
+        self,
+        url: str,
+        html_content: str,
+        doi: str,
+        *,
+        task_name: str,
+        item_index: int,
+    ) -> dict[str, Any]:
+        logger.info("[论文下载] 开始执行论文和SI下载")
+        return download_by_url(
+            url,
+            html_content,
+            doi,
+            task_name=task_name,
+            item_index=item_index,
+            project_root=self.project_root,
+        )
 
     def check_result_stub(self, _doi: str) -> dict[str, Any]:
         return {"paper_ok": False, "si_ok": False}
@@ -206,6 +249,15 @@ class TaskExecutor:
             if status == target:
                 count += 1
         return count
+
+    def _to_absolute_path(self, raw: Any) -> str:
+        text = str(raw or "").strip()
+        if not text:
+            return ""
+        path = Path(text)
+        if path.is_absolute():
+            return str(path)
+        return str((self.project_root / path).resolve())
 
     def _resolve_statistic_path(self) -> Path:
         preferred = [

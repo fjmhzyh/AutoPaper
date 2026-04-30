@@ -13,6 +13,7 @@ try:
     from core import gui
     from core.browser_controller import BrowserController
     from core.logger import configure_logging
+    from core.utils import get_current_url
 except ModuleNotFoundError:
     PROJECT_ROOT = Path(__file__).resolve().parents[1]
     if str(PROJECT_ROOT) not in sys.path:
@@ -21,6 +22,7 @@ except ModuleNotFoundError:
     from core import gui
     from core.browser_controller import BrowserController
     from core.logger import configure_logging
+    from core.utils import get_current_url
 
 
 logger = logging.getLogger(__name__)
@@ -54,7 +56,7 @@ def resolve_doi_url(doi: str) -> str | None:
         logger.info(f"[地址解析] 等待网页加载{int(page_load_sec)}秒")
         time.sleep(page_load_sec)
 
-        loaded, resolved_url = check_page_loaded(_copy_current_tab_url)
+        loaded, resolved_url = check_page_loaded(get_current_url)
         if loaded and resolved_url:
             logger.info(f"[地址解析] 地址解析成功: {resolved_url}")
             return resolved_url
@@ -64,7 +66,7 @@ def resolve_doi_url(doi: str) -> str | None:
         logger.info(f"[地址解析] 等待网页加载{int(page_load_sec)}秒")
         time.sleep(page_load_sec)
 
-        loaded, resolved_url = check_page_loaded(_copy_current_tab_url)
+        loaded, resolved_url = check_page_loaded(get_current_url)
         if loaded and resolved_url:
             logger.info(f"[地址解析] 地址解析成功: {resolved_url}")
             return resolved_url
@@ -91,20 +93,6 @@ def check_page_loaded(read_current_url) -> tuple[bool, str | None]:
     if _is_doi_redirect_host(second_url):
         return False, None
     return True, second_url
-
-
-def _copy_current_tab_url() -> str:
-    gui.hotkey("focus_address_bar")
-    time.sleep(ACTION_INTERVAL_SEC)
-    gui.hotkey("copy")
-    time.sleep(ACTION_INTERVAL_SEC)
-    gui.press('esc')
-
-    try:
-        import pyperclip  # type: ignore
-    except ModuleNotFoundError as exc:
-        raise RuntimeError("pyperclip is not installed") from exc
-    return str(pyperclip.paste() or "")
 
 
 def _refresh_page() -> None:
