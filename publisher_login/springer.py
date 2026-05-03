@@ -20,8 +20,31 @@ def login(resolved_url: str) -> bool:
     if not log_in_via:
         logger.info("[网站登陆] Springer 无需执行登陆流程")
         return True
-
+    
     logger.info("[网站登陆] 执行 Springer 登录流程")
+    
+    # 查找登陆按钮
+    utils.search_keyword_and_foucus('Log in via an institution')
+    # 点击登陆按钮
+    gui.press('enter',2,0.2)
+    time.sleep(30)
+    # 找到输入框
+    utils.search_keyword_and_foucus("Find your institution")
+    gui.press('tab')
+    # 在输入框输入浙大，并下拉9次选中
+    time.sleep(40)
+    gui.write("Zhejiang University", interval=0.1)
+    time.sleep(15)
+    gui.press("down", 9, 0.1)
+    gui.press("enter", 1, 0.2)
+    # 跳转到浙大登陆页，点击登陆
+    time.sleep(20)
+    gui.press("enter")
+    return True
+
+
+
+def _login_use_photo()->bool:
     login_button_img = utils.photo("link.springer.com1.png")
     institution_input_img = utils.photo("link.springer.com3.png")
 
@@ -51,15 +74,10 @@ def _select_institution(institution_input_img: str) -> bool:
     time.sleep(40)
     gui.write("Zhejiang University", interval=0.1)
     time.sleep(15)
-    _press("down", 9, 0.1)
-    _press("enter", 1, 0.2)
+    gui.press("down", 9, 0.1)
+    gui.press("enter", 1, 0.2)
     time.sleep(20)
-    _press("enter")
+    gui.press("enter")
     return True
 
 
-def _press(key: str, times: int = 1, interval: float = 0.0) -> None:
-    for _ in range(max(1, times)):
-        gui.press(key)
-        if interval > 0:
-            time.sleep(interval)

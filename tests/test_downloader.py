@@ -5,7 +5,13 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
-from core.downloader import move_latest_download_to_task, print_download, resolve_download_root, snapshot_download_names
+from core.downloader import (
+    move_latest_download_to_task,
+    print_download,
+    resolve_download_root,
+    save_html_content,
+    snapshot_download_names,
+)
 
 
 class DownloaderTests(unittest.TestCase):
@@ -87,6 +93,23 @@ class DownloaderTests(unittest.TestCase):
 
             self.assertEqual(saved, "download/task_a/si/si_03_10.1000_x.pdf")
             self.assertIn("/download/task_a/si/si_03_10.1000_x.pdf", write_mock.call_args.args[0].replace("\\", "/"))
+
+    def test_save_html_content_writes_expected_file(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            content = "<html><body>demo</body></html>"
+            saved = save_html_content(
+                project_root=root,
+                task_name="task_a",
+                doi="10.1000/x",
+                item_index=3,
+                html_content=content,
+            )
+
+            self.assertEqual(saved, "download/task_a/html/html_03_10.1000_x.html")
+            target = root / saved
+            self.assertTrue(target.exists())
+            self.assertEqual(target.read_text(encoding="utf-8"), content)
 
 
 if __name__ == "__main__":

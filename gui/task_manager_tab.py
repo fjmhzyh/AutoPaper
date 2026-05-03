@@ -1,23 +1,28 @@
 import csv
+import subprocess
+import sys
 import tkinter as tk
+from datetime import datetime
 from pathlib import Path
 from tkinter import filedialog, messagebox, ttk
 from tkinter import font as tkfont
 from typing import Callable
 
 try:
+    from core.csv_manager import CSVManager
     from core.task_manager import InvalidCSVFormatError, TaskManager
 except ModuleNotFoundError:
-    import sys
-
     PROJECT_ROOT = Path(__file__).resolve().parents[1]
     if str(PROJECT_ROOT) not in sys.path:
         sys.path.insert(0, str(PROJECT_ROOT))
+    from core.csv_manager import CSVManager
     from core.task_manager import InvalidCSVFormatError, TaskManager
 
 
 class TaskManagerTab(tk.Frame):
     """Task list page driven by statistic.csv."""
+
+    REFRESH_MS = 2000
 
     def __init__(
         self,
@@ -29,9 +34,16 @@ class TaskManagerTab(tk.Frame):
         self.on_view_detail = on_view_detail
         self.on_tasks_changed = on_tasks_changed
         self.task_manager = TaskManager()
+        self.project_root = Path(__file__).resolve().parents[1]
+        self.tasks_dir = self.project_root / "tasks"
+        self._executor_proc: subprocess.Popen[str] | None = None
+        self._running_task_name = ""
+        self._refresh_job: str | None = None
         self._setup_theme()
         self._build_ui()
         self._load_rows()
+        self._schedule_refresh()
+        self.bind("<Destroy>", self._on_destroy, add="+")
 
     def _pick_font(self):
         preferred = [
@@ -52,7 +64,7 @@ class TaskManagerTab(tk.Frame):
             "surface": "#ffffff",
             "surface_soft": "#f8faff",
             "border": "#e5eaf3",
-            "text": "#1f2937",
+            "text": "#374151",
             "muted": "#6b7280",
             "primary": "#2563eb",
             "primary_dark": "#1d4ed8",
@@ -207,9 +219,13 @@ class TaskManagerTab(tk.Frame):
             "success",
             "failed",
             "create_time",
-            "action",
+            "run_action",
+            "detail_action",
+            "delete_action",
         )
-        self.action_column_id = f"#{len(columns)}"
+        self.run_action_column_id = f"#{columns.index('run_action') + 1}"
+        self.detail_action_column_id = f"#{columns.index('detail_action') + 1}"
+        self.delete_action_column_id = f"#{columns.index('delete_action') + 1}"
         self.tree = ttk.Treeview(
             list_card,
             columns=columns,
@@ -228,17 +244,21 @@ class TaskManagerTab(tk.Frame):
             "success": "成功数量",
             "failed": "失败数量",
             "create_time": "创建时间",
-            "action": "操作",
+            "run_action": "开始/停止",
+            "detail_action": "查看详情",
+            "delete_action": "删除任务",
         }
         widths = {
-            "task": 220,
+            "task": 200,
             "status": 90,
-            "create_time": 180,
+            "create_time": 160,
             "doi_total": 100,
             "done": 100,
             "success": 100,
             "failed": 100,
-            "action": 240,
+            "run_action": 110,
+            "detail_action": 100,
+            "delete_action": 100,
         }
         anchors = {
             "task": "w",
@@ -248,7 +268,9 @@ class TaskManagerTab(tk.Frame):
             "done": "center",
             "success": "center",
             "failed": "center",
-            "action": "w",
+            "run_action": "center",
+            "detail_action": "center",
+            "delete_action": "center",
         }
         for col in columns:
             self.tree.heading(col, text=headers[col], anchor=anchors[col])
@@ -256,10 +278,6 @@ class TaskManagerTab(tk.Frame):
 
         self.tree.tag_configure("odd", background="#ffffff")
         self.tree.tag_configure("even", background="#f9fbff")
-        self.tree.tag_configure("running", foreground=self.colors["primary_dark"])
-        self.tree.tag_configure("success", foreground=self.colors["success"])
-        self.tree.tag_configure("danger", foreground=self.colors["danger"])
-        self.tree.tag_configure("pending", foreground=self.colors["muted"])
 
         footer = tk.Frame(body, bg=self.colors["bg"], pady=12)
         footer.grid(row=2, column=0, sticky="ew")
@@ -313,9 +331,6 @@ class TaskManagerTab(tk.Frame):
         )
 
     def _on_tree_click(self, event):
-        if not callable(self.on_view_detail):
-            return
-
         region = self.tree.identify("region", event.x, event.y)
         if region != "cell":
             return
@@ -325,9 +340,6 @@ class TaskManagerTab(tk.Frame):
         if not row_id or not column_id:
             return
 
-        if column_id != self.action_column_id:
-            return
-
         values = self.tree.item(row_id, "values")
         if not values:
             return
@@ -335,26 +347,196 @@ class TaskManagerTab(tk.Frame):
         if not task_name:
             return
 
-        self.on_view_detail(task_name)
+        if column_id == self.run_action_column_id:
+            run_text = str(values[7]).strip() if len(values) > 7 else ""
+            if run_text == "-":
+                return
+            self._on_run_action_clicked(task_name, run_text)
+            return
+        if column_id == self.detail_action_column_id:
+            if callable(self.on_view_detail):
+                self.on_view_detail(task_name)
+            return
+        if column_id == self.delete_action_column_id:
+            self._on_delete_action_clicked(task_name)
+
+    def _on_run_action_clicked(self, task_name: str, run_text: str) -> None:
+        if self._is_running_task(task_name):
+            self._stop_running_task()
+            return
+        if run_text == "一键重试":
+            self._retry_task(task_name)
+            return
+        self._start_task(task_name)
+
+    def _retry_task(self, task_name: str) -> None:
+        if self._is_executor_running():
+            messagebox.showwarning("提示", "已有任务执行中，请先停止当前任务")
+            return
+        task_path = self._task_csv_path(task_name)
+        if not task_path.exists():
+            messagebox.showerror("重试失败", f"任务文件不存在：{task_path.name}")
+            self._load_rows()
+            return
+
+        _, _, failed_count = self._get_task_paper_stats(task_name)
+        if failed_count <= 0:
+            messagebox.showinfo("提示", "当前没有可重试的失败记录")
+            self._load_rows()
+            return
+
+        confirmed = messagebox.askyesno(
+            "一键重试",
+            f"共有 {failed_count} 条失败记录，将重试下载",
+        )
+        if not confirmed:
+            return
+
+        self._reset_failed_rows_for_retry(task_path)
+        self._start_task(task_name)
+
+    def _start_task(self, task_name: str) -> None:
+        if self._is_executor_running():
+            messagebox.showwarning("提示", "已有任务执行中，请先停止当前任务")
+            return
+        task_path = self._task_csv_path(task_name)
+        if not task_path.exists():
+            messagebox.showerror("启动失败", f"任务文件不存在：{task_path.name}")
+            self._load_rows()
+            return
+        try:
+            self._executor_proc = subprocess.Popen(
+                [sys.executable, "-m", "core.task_executor", "--task", str(task_path)],
+                cwd=str(self.project_root),
+            )
+            self._running_task_name = Path(task_name).stem
+            self._load_rows()
+        except Exception as exc:
+            self._executor_proc = None
+            self._running_task_name = ""
+            messagebox.showerror("启动失败", f"无法启动任务执行：{exc}")
+
+    def _task_csv_path(self, task_name: str) -> Path:
+        return (self.tasks_dir / f"{Path(task_name).stem}.csv").resolve()
+
+    def _reset_failed_rows_for_retry(self, task_path: Path) -> None:
+        manager = CSVManager(task_path)
+        rows = manager.get_all()
+        clear_keys = [
+            "DownloaStatus",
+            "SIDownloadStatus",
+            "failedReason",
+            "PublisherUrl",
+            "PaperFile",
+            "SIFile",
+            "HtmlFile",
+            "PaperDownloadUrl",
+        ]
+        changed = False
+        for row in rows:
+            status = str(row.get("DownloaStatus", "") or "").strip().lower()
+            if status != "failed":
+                continue
+            for key in clear_keys:
+                if row.get(key, "") != "":
+                    changed = True
+                row[key] = ""
+            changed = True
+        if changed:
+            manager.rows = rows
+            manager.save()
+
+    def _stop_running_task(self) -> None:
+        proc = self._executor_proc
+        if not proc:
+            self._running_task_name = ""
+            self._load_rows()
+            return
+        try:
+            if proc.poll() is None:
+                proc.terminate()
+                try:
+                    proc.wait(timeout=5)
+                except subprocess.TimeoutExpired:
+                    proc.kill()
+                    proc.wait(timeout=5)
+        except Exception as exc:
+            messagebox.showerror("停止失败", f"停止任务失败：{exc}")
+        finally:
+            self._executor_proc = None
+            self._running_task_name = ""
+            self._load_rows()
+
+    def _on_delete_action_clicked(self, task_name: str) -> None:
+        task_stem = Path(task_name).stem
+        if self._is_running_task(task_stem):
+            messagebox.showwarning("提示", "任务正在执行中，请先停止执行后再删除")
+            return
+        if not messagebox.askyesno("确认删除", f"确认删除任务 {task_stem} 吗？"):
+            return
+
+        task_file = (self.tasks_dir / f"{task_stem}.csv").resolve()
+        try:
+            if task_file.exists():
+                task_file.unlink()
+            self._delete_statistic_row(task_stem)
+            self._load_rows()
+            if callable(self.on_tasks_changed):
+                self.on_tasks_changed(None)
+            messagebox.showinfo("删除成功", f"任务 {task_stem} 已删除")
+        except Exception as exc:
+            messagebox.showerror("删除失败", f"删除任务失败：{exc}")
+
+    def _delete_statistic_row(self, task_stem: str) -> None:
+        csv_path = self._find_statistic_csv()
+        if not csv_path:
+            return
+        manager = CSVManager(csv_path)
+        rows = manager.get_all()
+        filtered = []
+        target = Path(task_stem).stem.lower()
+        for row in rows:
+            name = Path(str(row.get("taskName", "") or "").strip()).stem.lower()
+            if name == target:
+                continue
+            filtered.append(row)
+        manager.rows = filtered
+        manager.save()
+
+    def _is_running_task(self, task_name: str) -> bool:
+        return (
+            self._is_executor_running()
+            and Path(str(self._running_task_name)).stem.lower() == Path(str(task_name)).stem.lower()
+        )
+
+    def _is_executor_running(self) -> bool:
+        return self._executor_proc is not None and self._executor_proc.poll() is None
+
+    def _schedule_refresh(self) -> None:
+        self._refresh_job = self.after(self.REFRESH_MS, self._on_refresh_timer)
+
+    def _on_refresh_timer(self) -> None:
+        if self.winfo_exists():
+            if self._executor_proc is not None and self._executor_proc.poll() is not None:
+                self._executor_proc = None
+                self._running_task_name = ""
+            self._load_rows()
+            self._schedule_refresh()
+
+    def _on_destroy(self, _event) -> None:
+        if not self.winfo_exists():
+            if self._refresh_job is not None:
+                try:
+                    self.after_cancel(self._refresh_job)
+                except Exception:
+                    pass
+                self._refresh_job = None
 
     def _render_rows(self, rows):
         self.tree.delete(*self.tree.get_children())
         for idx, row in enumerate(rows):
             base_tag = "odd" if idx % 2 == 0 else "even"
-            status_tag = self._status_tag(row[1])
-            self.tree.insert("", "end", values=row, tags=(base_tag, status_tag))
-
-    def _status_tag(self, status_text):
-        text = str(status_text).strip().lower()
-        if any(word in text for word in ("失败", "fail", "error")):
-            return "danger"
-        if any(word in text for word in ("待执行", "pending", "queued")):
-            return "pending"
-        if any(word in text for word in ("执行中", "进行中", "running", "processing")):
-            return "running"
-        if any(word in text for word in ("完成", "success", "done", "finished", "completed")):
-            return "success"
-        return "running"
+            self.tree.insert("", "end", values=row, tags=(base_tag,))
 
     def _map_status_display(self, raw_status):
         status = str(raw_status).strip()
@@ -368,12 +550,11 @@ class TaskManagerTab(tk.Frame):
         return mapping.get(status.lower(), status)
 
     def _find_statistic_csv(self):
-        project_root = Path(__file__).resolve().parents[1]
-        preferred = [project_root / "statistic.csv", project_root / "statistic.csv "]
+        preferred = [self.project_root / "statistic.csv", self.project_root / "statistic.csv "]
         for file_path in preferred:
             if file_path.exists() and file_path.is_file():
                 return file_path
-        for file_path in sorted(project_root.glob("statistic.csv*")):
+        for file_path in sorted(self.project_root.glob("statistic.csv*")):
             if file_path.is_file():
                 return file_path
         return None
@@ -396,6 +577,7 @@ class TaskManagerTab(tk.Frame):
 
                     raw_status = self._pick_field(row, "status", "状态")
                     status = self._map_status_display(raw_status)
+                    status_text = self._format_status_text(status)
                     total_count = self._to_int(
                         self._pick_field(row, "totalcount", "doitotal", "doi总数")
                     )
@@ -421,23 +603,73 @@ class TaskManagerTab(tk.Frame):
                     create_time = (
                         self._pick_field(row, "createtime", "create_time", "创建时间") or "-"
                     )
+                    run_action = self._resolve_run_action_text(task_name, status)
 
                     rows.append(
                         (
                             task_name,
-                            status,
+                            status_text,
                             str(total_count),
                             str(done_count),
                             str(success_count),
                             str(failed_count),
                             create_time,
-                            "查看详情  |  删除任务",
+                            run_action,
+                            "查看详情",
+                            "删除任务",
                         )
                     )
         except Exception:
             return []
 
-        return rows
+        return sorted(rows, key=self._sort_key_create_time, reverse=True)
+
+    def _format_status_text(self, status: str) -> str:
+        return str(status or "").strip()
+
+    def _resolve_run_action_text(self, task_name: str, status: str) -> str:
+        if self._is_running_task(task_name):
+            return "停止执行"
+        total_count, success_count, failed_count = self._get_task_paper_stats(task_name)
+        if total_count > 0 and success_count >= total_count:
+            return "-"
+        if status == "已完成" and failed_count > 0:
+            return "一键重试"
+        return "开始执行"
+
+    def _get_task_paper_stats(self, task_name: str) -> tuple[int, int, int]:
+        task_path = self._task_csv_path(task_name)
+        if not task_path.exists():
+            return 0, 0, 0
+        try:
+            manager = CSVManager(task_path)
+            rows = manager.get_all()
+        except Exception:
+            return 0, 0, 0
+
+        total = 0
+        success = 0
+        failed = 0
+        for row in rows:
+            doi = str(row.get("DOI", "") or "").strip()
+            if not doi:
+                continue
+            total += 1
+            status = str(row.get("DownloaStatus", "") or "").strip().lower()
+            if status == "success":
+                success += 1
+            elif status == "failed":
+                failed += 1
+        return total, success, failed
+
+    def _sort_key_create_time(self, row):
+        text = str(row[6] if len(row) > 6 else "").strip()
+        if not text or text == "-":
+            return datetime.min
+        try:
+            return datetime.strptime(text, "%Y-%m-%d %H:%M")
+        except Exception:
+            return datetime.min
 
     def _normalize_row(self, row):
         normalized = {}

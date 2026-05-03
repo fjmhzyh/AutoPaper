@@ -119,7 +119,85 @@ def extract_first_si_url(html_content: str, base_url: str) -> str:
     return ""
 
 
+def extract_all_links(html_content: str) -> list[str]:
+    text = str(html_content or "")
+    if not text:
+        return []
+
+    result: list[str] = []
+    seen: set[str] = set()
+
+    def _add_link(value: str) -> None:
+        link = str(value or "").strip()
+        if not link or link in seen:
+            return
+        seen.add(link)
+        result.append(link)
+
+    # 1) 提取所有绝对链接（不限于href）
+    lower_text = text.lower()
+    pos = 0
+    while True:
+        https_idx = lower_text.find("https://", pos)
+        http_idx = lower_text.find("http://", pos)
+        if https_idx < 0 and http_idx < 0:
+            break
+
+        if https_idx < 0:
+            idx = http_idx
+        elif http_idx < 0:
+            idx = https_idx
+        else:
+            idx = min(https_idx, http_idx)
+
+        end_idx = idx
+        while end_idx < len(text):
+            ch = text[end_idx]
+            if ch.isspace() or ch in {'"', "'", "<", ">"}:
+                break
+            end_idx += 1
+
+        raw_link = text[idx:end_idx]
+        cleaned = raw_link.rstrip(")],.;")
+        _add_link(cleaned)
+        pos = end_idx + 1
+
+    # 2) 提取href（保留相对路径能力）
+    pos = 0
+    while True:
+        idx = lower_text.find("href=", pos)
+        if idx < 0:
+            break
+        quote_idx = idx + 5
+        if quote_idx >= len(text):
+            break
+        quote = text[quote_idx]
+        if quote not in {"'", '"'}:
+            pos = quote_idx
+            continue
+        end_idx = text.find(quote, quote_idx + 1)
+        if end_idx < 0:
+            break
+        href = text[quote_idx + 1 : end_idx].strip()
+        _add_link(href)
+        pos = end_idx + 1
+    return result
+
+def find_link_by_keyword(links: list[str], keyword: str, base_url: str) -> str:
+    target = str(keyword or "").lower().strip()
+    if not target:
+        return ""
+    for href in links:
+        value = str(href or "").strip()
+        if not value:
+            continue
+        if target in value.lower():
+            return urljoin(base_url, value)
+    return ""
+
+
 def _resolve_project_root(project_root: str | Path | None) -> Path:
     if project_root is not None:
         return Path(project_root).resolve()
     return Path(__file__).resolve().parents[1]
+

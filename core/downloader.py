@@ -105,6 +105,28 @@ def resolve_download_root(project_root: str | Path) -> Path:
     return root / "download"
 
 
+def save_html_content(
+    *,
+    project_root: str | Path,
+    task_name: str,
+    doi: str,
+    item_index: int,
+    html_content: str,
+    prefix: str = "html",
+) -> str | None:
+    root = Path(project_root).resolve()
+    target_dir = resolve_download_root(root) / str(task_name).strip() / "html"
+    target_dir.mkdir(parents=True, exist_ok=True)
+
+    safe_doi = _normalize_doi_for_name(doi)
+    filename = f"{prefix}_{max(1, int(item_index)):02d}_{safe_doi}.html"
+    target = _dedupe_target(target_dir, filename)
+    target.write_text(str(html_content or ""), encoding="utf-8")
+    if not target.exists():
+        return None
+    return _to_output_path(root, target)
+
+
 def _wait_new_file(folder: Path, previous: set[str], deadline: float, poll_sec: float) -> Path | None:
     while time.time() <= deadline:
         candidates = []

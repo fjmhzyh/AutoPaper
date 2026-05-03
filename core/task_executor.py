@@ -11,7 +11,8 @@ from typing import Any
 try:
     from core.app_config import get_config
     from core.csv_manager import CSVManager
-    from core.logger import configure_logging
+    from core.downloader import save_html_content
+    from core.logger import configure_logging, setup_task_logging
     from publisher_download.router import download_by_url
     from publisher_login.router import login_by_url
     from core.resolve_doi_url import resolve_doi_url
@@ -23,7 +24,8 @@ except ModuleNotFoundError:
         sys.path.insert(0, str(PROJECT_ROOT))
     from core.app_config import get_config
     from core.csv_manager import CSVManager
-    from core.logger import configure_logging
+    from core.downloader import save_html_content
+    from core.logger import configure_logging, setup_task_logging
     from publisher_download.router import download_by_url
     from publisher_login.router import login_by_url
     from core.resolve_doi_url import resolve_doi_url
@@ -102,10 +104,21 @@ class TaskExecutor:
             login_ok = login_by_url(resolved_url)
             html_ok = True
             html_content = ""
+            html_file_path = ""
             if login_ok:
                 logger.info("[源码获取] 正在获取网页源码")
                 try:
                     html_content = get_html_content()
+                    html_file_path = str(
+                        save_html_content(
+                            project_root=self.project_root,
+                            task_name=task_name,
+                            doi=doi,
+                            item_index=index,
+                            html_content=html_content,
+                        )
+                        or ""
+                    )
                 except Exception as exc:
                     html_ok = False
                     logger.warning(f"[源码获取] 获取网页源码失败: {exc}")
@@ -143,7 +156,7 @@ class TaskExecutor:
                 fields["publisher_url"]: resolved_url,
                 fields["paper_file"]: self._to_absolute_path(download_result.get("paper_file", "")),
                 fields["si_file"]: self._to_absolute_path(download_result.get("si_file", "")),
-                fields["html_file"]: "",
+                fields["html_file"]: self._to_absolute_path(html_file_path),
                 fields["paper_download_url"]: str(download_result.get("paper_download_url", "") or ""),
             }
             task_csv.update_by(fields["doi"], doi, updates)
@@ -336,5 +349,6 @@ def _build_arg_parser() -> argparse.ArgumentParser:
 if __name__ == "__main__":
     configure_logging()
     args = _build_arg_parser().parse_args()
+    setup_task_logging(args.task)
     executor = TaskExecutor()
     executor.run(args.task)

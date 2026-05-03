@@ -20,7 +20,7 @@ def login(resolved_url: str) -> bool:
     access_through, zhejiang_university, open_pdf,access_through_institution= utils.check_keywords_exist(
         ["access through", "zhejiang university", "open pdf", 'access through your institution']
     )
-
+    logger.info(f"关键字结果:accses_throug:{access_through},zhejiang:{zhejiang_university}")
     # 半登陆状态
     if access_through and zhejiang_university:
         utils.search_keyword_and_foucus('zhejiang university')

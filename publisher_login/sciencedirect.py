@@ -16,20 +16,35 @@ def login(resolved_url: str) -> bool:
     if not host.endswith("sciencedirect.com"):
         return True
 
-    open_access, full_access, purchase_pdf = utils.check_keywords_exist(
-        ["open access", "full access", "purchase pdf"]
+    purchase_pdf, access_through,download_full_issue= utils.check_keywords_exist(
+        [
+            "purchase pdf",
+            "access through",
+            "Download full issue"
+        ]
     )
-    if open_access or full_access:
-        logger.info("[网站登陆] ScienceDirect 文章为 open access，无需登陆")
+    
+    logger.info(f"zj:{access_through} issue:{download_full_issue} pdf:{purchase_pdf}")
+
+    # 如果存在access_through，则需要登陆下载
+    if access_through and purchase_pdf:
+        utils.search_keyword_and_foucus('purchase pdf')
+        gui.hotkey('shift_tab')
+        gui.press('enter',2,0.1)
+        time.sleep(30)
+        gui.press('enter',2,1)
+        time.sleep(30)
         return True
+    
+    # 开源或者已登陆
+    if download_full_issue:
+        logger.info("[网站登陆] 当前文章，无需执行登陆操作")
+        return True
+    
+def _login_use_hotkey()->bool:
+    return True
 
-    if purchase_pdf:
-        return _dispatch_login()
-
-    return _dispatch_login()
-
-
-def _dispatch_login() -> bool:
+def _login_use_photo() -> bool:
     login_button_image = utils.photo("sciencedirect.com1.png")
     gui.click(700, 1000)
     logger.info("[网站登陆] 正在查找 ScienceDirect 登录按钮")

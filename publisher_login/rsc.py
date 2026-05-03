@@ -16,13 +16,51 @@ def login(resolved_url: str) -> bool:
     if not host.endswith("rsc.org"):
         return True
 
-    open_access, access_provided_by = utils.check_keywords_exist([
+    open_access, access_provided_by,using_your_instituition, download_this_article= utils.check_keywords_exist([
         "This article is Open Access",
         "access provided by",
+        "Using your institution credentials",
+        "download this article"
     ])
-    if open_access or access_provided_by:
+
+    if using_your_instituition:
+        return _login_use_hotkey()
+    
+    if access_provided_by and download_this_article:
+        logger.info("[网站登陆] 已登陆，无需再次登陆")
+        return True
+    
+    if open_access:
         logger.info("[网站登陆] 当前文章为 open access，无需登陆")
         return True
+    
+
+
+
+def _login_use_hotkey() -> bool:
+    # 点击登陆按钮
+    utils.search_keyword_and_foucus('Using your institution credentials')
+    gui.press('enter',2,0.2)
+
+    # 等待页面加载
+    time.sleep(30)
+
+    # 点击View all institutions
+    utils.search_keyword_and_foucus("View all institutions")
+    gui.press('enter',2,0.2)
+
+    # 点击浙江大学
+    utils.search_keyword_and_foucus("zhejiang university")
+    gui.press('enter',2,0.2)
+
+    # 等待页面加载
+    time.sleep(20)
+    utils.get_current_url()
+    # 点击登陆
+    gui.press('enter',2,0.2)
+    return True
+
+def _login_use_photo() -> bool:
 
     logger.info("[网站登陆] 执行 RSC 登录流程")
     login_button_img = utils.photo("pubs.rsc.org1.png")
