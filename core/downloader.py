@@ -11,6 +11,7 @@ from pathlib import Path
 from core import gui
 
 PARTIAL_SUFFIXES = {".crdownload", ".part", ".download", ".tmp"}
+ALLOWED_DOWNLOAD_SUFFIXES = {".pdf", ".zip", ".doc", ".docx", ".xls", ".xlsx", ".csv", ".txt", ".html", ".htm"}
 
 
 def default_download_dir() -> Path:
@@ -51,7 +52,7 @@ def move_latest_download_to_task(
     target_dir = resolve_download_root(root) / str(task_name).strip() / str(subfolder).strip()
     target_dir.mkdir(parents=True, exist_ok=True)
 
-    suffix = source.suffix or ".pdf"
+    suffix = _normalize_download_suffix(source.suffix)
     safe_doi = _normalize_doi_for_name(doi)
     base_name = f"{prefix}_{max(1, int(item_index)):02d}_{safe_doi}{suffix}"
     target = _dedupe_target(target_dir, base_name)
@@ -161,6 +162,17 @@ def _normalize_doi_for_name(doi: str) -> str:
     normalized = re.sub(r"[^0-9A-Za-z._-]+", "_", text)
     normalized = normalized.strip("._-")
     return normalized or "unknown_doi"
+
+
+def _normalize_download_suffix(raw_suffix: str | None) -> str:
+    suffix = str(raw_suffix or "").strip().lower()
+    if not suffix:
+        return ".pdf"
+    if not suffix.startswith("."):
+        suffix = f".{suffix}"
+    if suffix in ALLOWED_DOWNLOAD_SUFFIXES:
+        return suffix
+    return ".pdf"
 
 
 def _dedupe_target(folder: Path, filename: str) -> Path:

@@ -77,14 +77,27 @@ class MainWindow(tk.Tk):
         self.notebook.add(self.log_tab, text="系统日志")
         self.notebook.add(self.task_detail_tab, text="任务详情")
         self.notebook.add(self.config_tab, text="系统配置")
+        self.notebook.bind("<<NotebookTabChanged>>", self._on_tab_changed)
 
     def _on_tasks_changed(self, preferred_task: str | None = None):
         self.task_detail_tab.refresh_task_options(preferred_task=preferred_task)
+        self.log_tab.refresh_task_options(preferred_task=preferred_task)
 
     def open_task_detail(self, task_name: str):
         self.task_detail_tab.refresh_task_options(preferred_task=task_name)
         self.task_detail_tab.select_task(task_name)
         self.notebook.select(self.task_detail_tab)
+
+    def _on_tab_changed(self, _event=None):
+        current = self.notebook.select()
+        if current == str(self.task_manager_tab):
+            self.task_manager_tab._load_rows()
+            return
+        if current == str(self.task_detail_tab):
+            self.task_detail_tab.refresh_task_options(preferred_task=self.task_detail_tab.current_task_var.get())
+            return
+        if current == str(self.log_tab):
+            self.log_tab.refresh_task_options(preferred_task=self.log_tab.task_name_var.get())
 
 
 if __name__ == "__main__":

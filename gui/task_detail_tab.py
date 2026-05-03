@@ -243,6 +243,13 @@ class TaskDetailTab(tk.Frame):
             takefocus=False,
             command=self._on_search_clicked,
         ).grid(row=0, column=2, padx=(0, 10), sticky="w")
+        ttk.Button(
+            toolbar,
+            text="刷新",
+            style="Ghost.TButton",
+            takefocus=False,
+            command=self._refresh_current_task_detail,
+        ).grid(row=0, column=3, padx=(0, 10), sticky="w")
 
         ttk.Button(
             toolbar,
@@ -441,6 +448,14 @@ class TaskDetailTab(tk.Frame):
             if any(key in str(cell).lower() for cell in row):
                 filtered.append(row)
         self._render_rows(filtered)
+
+    def _refresh_current_task_detail(self):
+        task_file = self._resolve_task_file(self.current_task_var.get())
+        if not task_file:
+            self._render_rows([])
+            self._set_summary("-", "-", "-", "-", "-")
+            return
+        self._load_task(task_file)
 
     def _render_rows(self, rows: list[tuple[str, ...]]):
         self.detail_tree.delete(*self.detail_tree.get_children())

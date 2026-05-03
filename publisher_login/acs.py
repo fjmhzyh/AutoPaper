@@ -6,6 +6,8 @@ from urllib.parse import urlparse
 
 from core import gui
 from core import utils
+from core.app_config import get_config
+
 
 
 logger = logging.getLogger(__name__)
@@ -15,6 +17,10 @@ def login(resolved_url: str) -> bool:
     host = (urlparse(str(resolved_url or "")).hostname or "").lower().strip()
     if not host.endswith("acs.org"):
         return True
+    
+
+    config = get_config()
+    page_load_sec = config.get_float("download.page_load_sec", default=12.0)
 
     logger.info("[网站登陆] 执行 ACS 登录流程")
     access_through, zhejiang_university, open_pdf,access_through_institution= utils.check_keywords_exist(

@@ -38,12 +38,9 @@ class TaskManagerTab(tk.Frame):
         self.tasks_dir = self.project_root / "tasks"
         self._executor_proc: subprocess.Popen[str] | None = None
         self._running_task_name = ""
-        self._refresh_job: str | None = None
         self._setup_theme()
         self._build_ui()
         self._load_rows()
-        self._schedule_refresh()
-        self.bind("<Destroy>", self._on_destroy, add="+")
 
     def _pick_font(self):
         preferred = [
@@ -186,6 +183,7 @@ class TaskManagerTab(tk.Frame):
             highlightthickness=1,
             highlightbackground=self.colors["border"],
             highlightcolor=self.colors["primary"],
+            width=20,
         )
         self.keyword_entry.grid(row=0, column=1, sticky="ew", ipady=10, padx=(0, 12))
         self.keyword_entry.insert(0, "请输入关键词")
@@ -204,7 +202,14 @@ class TaskManagerTab(tk.Frame):
             style="Ghost.TButton",
             takefocus=False,
             command=self._on_import_csv_clicked,
-        ).grid(row=0, column=3)
+        ).grid(row=0, column=3, padx=(0, 10))
+        ttk.Button(
+            toolbar_card,
+            text="刷新列表",
+            style="Ghost.TButton",
+            takefocus=False,
+            command=self._load_rows,
+        ).grid(row=0, column=4)
 
         list_card = ttk.Frame(body, style="Card.TFrame", padding=14)
         list_card.grid(row=1, column=0, sticky="nsew")
@@ -411,6 +416,8 @@ class TaskManagerTab(tk.Frame):
             )
             self._running_task_name = Path(task_name).stem
             self._load_rows()
+            if callable(self.on_tasks_changed):
+                self.on_tasks_changed(task_name)
         except Exception as exc:
             self._executor_proc = None
             self._running_task_name = ""
@@ -466,6 +473,8 @@ class TaskManagerTab(tk.Frame):
             self._executor_proc = None
             self._running_task_name = ""
             self._load_rows()
+            if callable(self.on_tasks_changed):
+                self.on_tasks_changed(None)
 
     def _on_delete_action_clicked(self, task_name: str) -> None:
         task_stem = Path(task_name).stem
@@ -511,26 +520,6 @@ class TaskManagerTab(tk.Frame):
 
     def _is_executor_running(self) -> bool:
         return self._executor_proc is not None and self._executor_proc.poll() is None
-
-    def _schedule_refresh(self) -> None:
-        self._refresh_job = self.after(self.REFRESH_MS, self._on_refresh_timer)
-
-    def _on_refresh_timer(self) -> None:
-        if self.winfo_exists():
-            if self._executor_proc is not None and self._executor_proc.poll() is not None:
-                self._executor_proc = None
-                self._running_task_name = ""
-            self._load_rows()
-            self._schedule_refresh()
-
-    def _on_destroy(self, _event) -> None:
-        if not self.winfo_exists():
-            if self._refresh_job is not None:
-                try:
-                    self.after_cancel(self._refresh_job)
-                except Exception:
-                    pass
-                self._refresh_job = None
 
     def _render_rows(self, rows):
         self.tree.delete(*self.tree.get_children())

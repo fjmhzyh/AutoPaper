@@ -3,7 +3,7 @@ name = "AutoPaper"
 language = "zh-CN"
 
 [download]
-page_load_sec = 12
+page_load_sec = 30
 doi_download_interval_sec = 30
 paper_download_retry_times = 3
 

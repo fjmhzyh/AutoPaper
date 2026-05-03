@@ -8,6 +8,7 @@ from core.browser_controller import BrowserController
 from core.downloader import print_download
 from publisher_download.common import extract_first_si_url, normalize_doi
 
+from core.app_config import get_config
 
 logger = logging.getLogger(__name__)
 

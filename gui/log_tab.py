@@ -1,5 +1,6 @@
 import csv
 import tkinter as tk
+from datetime import datetime
 from pathlib import Path
 from tkinter import font as tkfont
 from tkinter import ttk
@@ -35,6 +36,7 @@ class LogTab(tk.Frame):
         self.success_var = tk.StringVar(value="成功：-")
         self.failed_var = tk.StringVar(value="失败：-")
         self.current_log_content = ""
+        self._preferred_task_name = ""
 
         self._setup_theme()
         self._build_ui()
@@ -198,6 +200,13 @@ class LogTab(tk.Frame):
             takefocus=False,
             command=self._clear_log_view,
         ).grid(row=0, column=3, sticky="w", padx=(0, 10))
+        ttk.Button(
+            toolbar,
+            text="刷新",
+            style="Ghost.TButton",
+            takefocus=False,
+            command=self._refresh_current_log_view,
+        ).grid(row=0, column=4, sticky="w", padx=(0, 10))
 
         self.log_combo = ttk.Combobox(
             toolbar,
@@ -224,10 +233,15 @@ class LogTab(tk.Frame):
         self.log_text.grid(row=1, column=0, columnspan=2, sticky="nsew")
         self.log_text.configure(state="disabled")
 
+    def refresh_task_options(self, preferred_task: str | None = None):
+        self._preferred_task_name = self._normalize_task_name(preferred_task)
+        self._reload_all()
+
     def _reload_all(self):
         self.statistic_path = self._find_statistic_csv()
         self.task_to_logs = self._build_task_log_mapping()
-        task_names = list(self.task_to_logs.keys())
+        task_rows = self._read_tasks_from_statistic()
+        task_names = [row["taskName"] for row in task_rows]
         self.task_combo["values"] = task_names
 
         if not task_names:
@@ -239,9 +253,10 @@ class LogTab(tk.Frame):
             self._set_log_text("暂无日志")
             return
 
-        self.task_name_var.set(task_names[0])
-        self._sync_task_combobox_selection(task_names[0])
-        self._on_task_changed()
+        selected = self._pick_task_after_reload(task_rows, task_names)
+        self._sync_task_combobox_selection(selected)
+        self._refresh_task_view(selected, keep_log_selection=True)
+        self._preferred_task_name = ""
 
     def _build_task_log_mapping(self) -> dict[str, list[dict[str, str]]]:
         if not self.index_path.exists() or not self.index_path.is_file():
@@ -276,8 +291,56 @@ class LogTab(tk.Frame):
         )
         return {name: logs for name, logs in sorted_items}
 
+    def _read_tasks_from_statistic(self) -> list[dict[str, str]]:
+        if not self.statistic_path or not self.statistic_path.exists() or not self.statistic_path.is_file():
+            return []
+        rows: list[dict[str, str]] = []
+        try:
+            with self.statistic_path.open("r", encoding="utf-8-sig", newline="") as csv_file:
+                reader = csv.DictReader(csv_file)
+                for raw in reader:
+                    row = {str(k).strip().lower(): str(v or "").strip() for k, v in raw.items()}
+                    task_name = Path(row.get("taskname", "")).stem
+                    if not task_name:
+                        continue
+                    rows.append(
+                        {
+                            "taskName": task_name,
+                            "status": str(row.get("status", "")).strip().lower(),
+                            "createTime": str(row.get("createtime", "")).strip(),
+                            "updateTime": str(row.get("updatetime", "")).strip(),
+                        }
+                    )
+        except Exception:
+            return []
+
+        rows.sort(key=self._task_sort_key, reverse=True)
+        unique_rows: list[dict[str, str]] = []
+        seen: set[str] = set()
+        for row in rows:
+            key = row["taskName"].lower()
+            if key in seen:
+                continue
+            seen.add(key)
+            unique_rows.append(row)
+        return unique_rows
+
+    def _pick_task_after_reload(self, task_rows: list[dict[str, str]], task_names: list[str]) -> str:
+        current = self._normalize_task_name(self.task_name_var.get())
+        if current and current in task_names:
+            return current
+
+        preferred = self._normalize_task_name(self._preferred_task_name)
+        if preferred and preferred in task_names:
+            return preferred
+
+        for row in task_rows:
+            if row.get("status", "") == "running":
+                return row["taskName"]
+        return task_names[0]
+
     def _on_task_changed(self, _event=None):
-        task_name = Path(str(self.task_name_var.get() or "").strip()).stem
+        task_name = self._normalize_task_name(self.task_name_var.get())
         if not task_name:
             self.log_combo["values"] = []
             self.log_name_var.set("")
@@ -287,10 +350,16 @@ class LogTab(tk.Frame):
             return
 
         self._sync_task_combobox_selection(task_name)
+        self._refresh_task_view(task_name, keep_log_selection=False)
+
+    def _on_log_changed(self, _event=None):
+        self._load_current_log_content()
+        self._set_log_text(self.current_log_content if self.current_log_content else "暂无日志")
+
+    def _refresh_task_view(self, task_name: str, *, keep_log_selection: bool) -> None:
         logs = self.task_to_logs.get(task_name, [])
         log_names = [str(item.get("logFile", "") or "") for item in logs if item.get("logFile")]
         self.log_combo["values"] = log_names
-
         self._update_summary_for_task(task_name)
 
         if not log_names:
@@ -299,11 +368,14 @@ class LogTab(tk.Frame):
             self._set_log_text("暂无日志")
             return
 
-        self.log_name_var.set(log_names[0])
-        self._load_current_log_content()
-        self._set_log_text(self.current_log_content if self.current_log_content else "暂无日志")
-
-    def _on_log_changed(self, _event=None):
+        selected_log = ""
+        if keep_log_selection:
+            current_log = str(self.log_name_var.get() or "").strip()
+            if current_log in log_names:
+                selected_log = current_log
+        if not selected_log:
+            selected_log = log_names[0]
+        self.log_name_var.set(selected_log)
         self._load_current_log_content()
         self._set_log_text(self.current_log_content if self.current_log_content else "暂无日志")
 
@@ -349,10 +421,33 @@ class LogTab(tk.Frame):
         self.keyword_var.set("")
         self._set_log_text("")
 
+    def _refresh_current_log_view(self):
+        self._load_current_log_content()
+        self._set_log_text(self.current_log_content if self.current_log_content else "暂无日志")
+
     def _sync_task_combobox_selection(self, task_name: str):
-        normalized = Path(str(task_name or "").strip()).stem
+        normalized = self._normalize_task_name(task_name)
         self.task_name_var.set(normalized)
         self.task_combo.set(normalized)
+
+    @staticmethod
+    def _normalize_task_name(task_name: str | None) -> str:
+        return Path(str(task_name or "").strip()).stem
+
+    @staticmethod
+    def _parse_datetime(text: str) -> datetime:
+        raw = str(text or "").strip()
+        if not raw:
+            return datetime.min
+        try:
+            return datetime.strptime(raw, "%Y-%m-%d %H:%M")
+        except Exception:
+            return datetime.min
+
+    def _task_sort_key(self, row: dict[str, str]) -> tuple[datetime, datetime]:
+        update_time = self._parse_datetime(row.get("updateTime", ""))
+        create_time = self._parse_datetime(row.get("createTime", ""))
+        return update_time, create_time
 
     def _set_summary(self, executed: str, success: str, failed: str):
         self.executed_var.set(f"已执行：{executed}")
@@ -399,6 +494,7 @@ class LogTab(tk.Frame):
         self.log_text.delete("1.0", "end")
         self.log_text.insert("1.0", str(content or ""))
         self.log_text.configure(state="disabled")
+
 
     @staticmethod
     def _to_int(value: str | None) -> int:

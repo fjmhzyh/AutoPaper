@@ -2,9 +2,11 @@ from __future__ import annotations
 
 import argparse
 import logging
+import subprocess
 import sys
 import time
 from datetime import datetime
+from os import getpid
 from pathlib import Path
 from typing import Any
 
@@ -61,124 +63,149 @@ class TaskExecutor:
             0.0,
             get_config().get_float("download.doi_download_interval_sec", default=30.0),
         )
+        self._yanzhen_proc: subprocess.Popen[str] | None = None
 
     def run(self, task_name_or_path: str) -> None:
         task_path = self._resolve_task_path(task_name_or_path)
         task_name = task_path.stem
         task_csv = CSVManager(task_path)
         rows = task_csv.get_all()
-        if not rows:
-            logger.warning(f"[任务获取] 任务名-{task_name} DOI总数-0条")
-            self._update_statistic(task_name, status="finished", total_count=0, success_count=0, failed_count=0)
-            return
+        self._start_yanzhen_or_raise()
+        try:
+            if not rows:
+                logger.warning(f"[任务获取] 任务名-{task_name} DOI总数-0条")
+                self._update_statistic(task_name, status="finished", total_count=0, success_count=0, failed_count=0)
+                return
 
-        fields = self._resolve_task_fields(task_csv.fieldnames)
-        pending = self._collect_pending_rows(rows, fields)
-        total = len(pending)
-        logger.info(f"[任务获取] 任务名-{task_name} DOI总数-{total}条")
+            fields = self._resolve_task_fields(task_csv.fieldnames)
+            pending = self._collect_pending_rows(rows, fields)
+            total = len(pending)
+            logger.info(f"[任务获取] 任务名-{task_name} DOI总数-{total}条")
 
-        self._update_statistic(task_name, status="running", total_count=total, success_count=0, failed_count=0)
+            self._update_statistic(task_name, status="running", total_count=total, success_count=0, failed_count=0)
 
-        for index, row in enumerate(pending, start=1):
-            doi = row.get(fields["doi"], "").strip()
-            logger.info(f"[任务进度] 共{total}条，当前第{index}条: DOI - {doi}")
+            for current_index, (absolute_index, row) in enumerate(pending, start=1):
+                doi = row.get(fields["doi"], "").strip()
+                logger.info(f"[任务进度] 共{total}条，当前第{current_index}条，序号{absolute_index}: DOI - {doi}")
 
-            resolved_url = resolve_doi_url(doi)
-            if not resolved_url:
-                task_csv.update_by(
-                    fields["doi"],
-                    doi,
-                    {
-                        fields["status"]: "failed",
-                        fields["si_status"]: "failed",
-                        fields["failed_reason"]: "网页无法打开",
-                    },
-                )
-                logger.info(f"[执行结果] 第{index}条执行结束：论文下载-失败， si下载-失败")
-                if index < total:
-                    logger.info(f"[执行间隔] 等待{int(self.interval_sec)}秒，开始执行第{index + 1}条")
-                    time.sleep(self.interval_sec)
-                continue
-
-            login_ok = True
-            login_ok = login_by_url(resolved_url)
-            html_ok = True
-            html_content = ""
-            html_file_path = ""
-            if login_ok:
-                logger.info("[源码获取] 正在获取网页源码")
-                try:
-                    html_content = get_html_content()
-                    html_file_path = str(
-                        save_html_content(
-                            project_root=self.project_root,
-                            task_name=task_name,
-                            doi=doi,
-                            item_index=index,
-                            html_content=html_content,
-                        )
-                        or ""
+                resolved_url = resolve_doi_url(doi)
+                if not resolved_url:
+                    task_csv.update_by(
+                        fields["doi"],
+                        doi,
+                        {
+                            fields["status"]: "failed",
+                            fields["si_status"]: "failed",
+                            fields["failed_reason"]: "网页无法打开",
+                        },
                     )
-                except Exception as exc:
-                    html_ok = False
-                    logger.warning(f"[源码获取] 获取网页源码失败: {exc}")
-            else:
-                logger.info("[源码获取] 未获取到可用地址或登录失败，跳过源码获取")
-            download_result = self.publisher_download(
-                resolved_url or "",
-                html_content,
-                doi,
-                task_name=task_name,
-                item_index=index,
-            ) if login_ok else {
-                "paper_ok": False,
-                "si_ok": False,
-                "paper_download_url": "",
-                "paper_file": "",
-                "si_file": "",
-                "failed_reason": "登录失败",
-            }
-            self.check_result_stub(doi)
+                    rows_after_current = task_csv.get_all()
+                    success_count_current = self._count_status(rows_after_current, fields["status"], "success")
+                    failed_count_current = self._count_status(rows_after_current, fields["status"], "failed")
+                    self._update_statistic(
+                        task_name,
+                        status="running",
+                        total_count=total,
+                        success_count=success_count_current,
+                        failed_count=failed_count_current,
+                    )
+                    logger.info(f"[执行结果] 第{current_index}条执行结束：论文下载-失败， si下载-失败")
+                    if current_index < total:
+                        logger.info(f"[执行间隔] 等待{int(self.interval_sec)}秒，开始执行第{current_index + 1}条")
+                        time.sleep(self.interval_sec)
+                    continue
 
-            paper_ok = bool(download_result.get("paper_ok"))
-            si_ok = bool(download_result.get("si_ok"))
-            ok = bool(login_ok) and bool(paper_ok)
-            status_text = "success" if ok else "failed"
-            failed_reason = ""
-            if not ok:
-                failed_reason = str(download_result.get("failed_reason", "") or "").strip() or "处理失败"
-            elif not html_ok:
-                failed_reason = "源码获取失败"
-            updates = {
-                fields["status"]: status_text,
-                fields["si_status"]: "success" if si_ok else "failed",
-                fields["failed_reason"]: failed_reason,
-                fields["publisher_url"]: resolved_url,
-                fields["paper_file"]: self._to_absolute_path(download_result.get("paper_file", "")),
-                fields["si_file"]: self._to_absolute_path(download_result.get("si_file", "")),
-                fields["html_file"]: self._to_absolute_path(html_file_path),
-                fields["paper_download_url"]: str(download_result.get("paper_download_url", "") or ""),
-            }
-            task_csv.update_by(fields["doi"], doi, updates)
+                login_ok = True
+                login_ok = login_by_url(resolved_url)
+                html_ok = True
+                html_content = ""
+                html_file_path = ""
+                if login_ok:
+                    logger.info("[源码获取] 正在获取网页源码")
+                    try:
+                        html_content = get_html_content()
+                        html_file_path = str(
+                            save_html_content(
+                                project_root=self.project_root,
+                                task_name=task_name,
+                                doi=doi,
+                                item_index=absolute_index,
+                                html_content=html_content,
+                            )
+                            or ""
+                        )
+                    except Exception as exc:
+                        html_ok = False
+                        logger.warning(f"[源码获取] 获取网页源码失败: {exc}")
+                else:
+                    logger.info("[源码获取] 未获取到可用地址或登录失败，跳过源码获取")
+                download_result = self.publisher_download(
+                    resolved_url or "",
+                    html_content,
+                    doi,
+                    task_name=task_name,
+                    item_index=absolute_index,
+                ) if login_ok else {
+                    "paper_ok": False,
+                    "si_ok": False,
+                    "paper_download_url": "",
+                    "paper_file": "",
+                    "si_file": "",
+                    "failed_reason": "登录失败",
+                }
+                self.check_result_stub(doi)
 
-            paper_status = "成功" if paper_ok else "失败"
-            si_status = "成功" if si_ok else "失败"
-            logger.info(f"[执行结果] 第{index}条执行结束：论文下载-{paper_status}， si下载-{si_status}")
+                paper_ok = bool(download_result.get("paper_ok"))
+                si_ok = bool(download_result.get("si_ok"))
+                ok = bool(login_ok) and bool(paper_ok)
+                status_text = "success" if ok else "failed"
+                failed_reason = ""
+                if not ok:
+                    failed_reason = str(download_result.get("failed_reason", "") or "").strip() or "处理失败"
+                elif not html_ok:
+                    failed_reason = "源码获取失败"
+                updates = {
+                    fields["status"]: status_text,
+                    fields["si_status"]: "success" if si_ok else "failed",
+                    fields["failed_reason"]: failed_reason,
+                    fields["publisher_url"]: resolved_url,
+                    fields["paper_file"]: self._to_absolute_path(download_result.get("paper_file", "")),
+                    fields["si_file"]: self._to_absolute_path(download_result.get("si_file", "")),
+                    fields["html_file"]: self._to_absolute_path(html_file_path),
+                    fields["paper_download_url"]: str(download_result.get("paper_download_url", "") or ""),
+                }
+                task_csv.update_by(fields["doi"], doi, updates)
+                rows_after_current = task_csv.get_all()
+                success_count_current = self._count_status(rows_after_current, fields["status"], "success")
+                failed_count_current = self._count_status(rows_after_current, fields["status"], "failed")
+                self._update_statistic(
+                    task_name,
+                    status="running",
+                    total_count=total,
+                    success_count=success_count_current,
+                    failed_count=failed_count_current,
+                )
 
-            if index < total:
-                logger.info(f"[执行间隔] 等待{int(self.interval_sec)}秒，开始执行第{index + 1}条")
-                time.sleep(self.interval_sec)
+                paper_status = "成功" if paper_ok else "失败"
+                si_status = "成功" if si_ok else "失败"
+                logger.info(f"[执行结果] 第{current_index}条执行结束：论文下载-{paper_status}， si下载-{si_status}")
 
-        rows_after = task_csv.get_all()
-        success_count = self._count_status(rows_after, fields["status"], "success")
-        failed_count = self._count_status(rows_after, fields["status"], "failed")
-        self._update_statistic(
-            task_name,
-            status="finished",
-            total_count=total,
-            success_count=success_count,
-            failed_count=failed_count,
-        )
+                if current_index < total:
+                    logger.info(f"[执行间隔] 等待{int(self.interval_sec)}秒，开始执行第{current_index + 1}条")
+                    time.sleep(self.interval_sec)
+
+            rows_after = task_csv.get_all()
+            success_count = self._count_status(rows_after, fields["status"], "success")
+            failed_count = self._count_status(rows_after, fields["status"], "failed")
+            self._update_statistic(
+                task_name,
+                status="finished",
+                total_count=total,
+                success_count=success_count,
+                failed_count=failed_count,
+            )
+        finally:
+            self._stop_yanzhen()
 
     def publisher_download(
         self,
@@ -201,6 +228,51 @@ class TaskExecutor:
 
     def check_result_stub(self, _doi: str) -> dict[str, Any]:
         return {"paper_ok": False, "si_ok": False}
+
+    def _start_yanzhen_or_raise(self) -> None:
+        if self._yanzhen_proc and self._yanzhen_proc.poll() is None:
+            return
+        cmd = [sys.executable, "-m", "core.yanzhen", "--parent-pid", str(getpid())]
+        try:
+            self._yanzhen_proc = subprocess.Popen(
+                cmd,
+                cwd=str(self.project_root),
+                stdout=None,
+                stderr=None,
+                text=True,
+            )
+        except Exception as exc:
+            logger.error(f"[验证码] 启动失败: {exc}")
+            raise RuntimeError("验证码进程启动失败") from exc
+
+        time.sleep(1.0)
+        assert self._yanzhen_proc is not None
+        exit_code = self._yanzhen_proc.poll()
+        if exit_code is not None:
+            logger.error(f"[验证码] 启动后秒退，退出码={exit_code}")
+            self._stop_yanzhen()
+            raise RuntimeError("验证码进程启动失败")
+        logger.info(f"[验证码] 进程启动成功，PID={self._yanzhen_proc.pid}")
+
+    def _stop_yanzhen(self) -> None:
+        proc = self._yanzhen_proc
+        if not proc:
+            return
+        try:
+            if proc.poll() is None:
+                logger.info(f"[验证码] 正在停止进程，PID={proc.pid}")
+                proc.terminate()
+                try:
+                    proc.wait(timeout=5)
+                except subprocess.TimeoutExpired:
+                    logger.warning(f"[验证码] terminate 超时，强制 kill，PID={proc.pid}")
+                    proc.kill()
+                    proc.wait(timeout=5)
+                logger.info("[验证码] 进程已停止")
+        except Exception as exc:
+            logger.warning(f"[验证码] 停止进程异常: {exc}")
+        finally:
+            self._yanzhen_proc = None
 
     def _resolve_task_path(self, task_name_or_path: str) -> Path:
         raw = str(task_name_or_path or "").strip()
@@ -239,18 +311,21 @@ class TaskExecutor:
         return None
 
     @staticmethod
-    def _collect_pending_rows(rows: list[dict[str, str]], fields: dict[str, str]) -> list[dict[str, str]]:
-        result: list[dict[str, str]] = []
+    def _collect_pending_rows(
+        rows: list[dict[str, str]],
+        fields: dict[str, str],
+    ) -> list[tuple[int, dict[str, str]]]:
+        result: list[tuple[int, dict[str, str]]] = []
         doi_key = fields["doi"]
         status_key = fields["status"]
-        for row in rows:
+        for absolute_index, row in enumerate(rows, start=1):
             doi = str(row.get(doi_key, "") or "").strip()
             if not doi:
                 continue
             status = str(row.get(status_key, "") or "").strip().lower()
             if status in {"success", "failed"}:
                 continue
-            result.append(row)
+            result.append((absolute_index, row))
         return result
 
     @staticmethod
