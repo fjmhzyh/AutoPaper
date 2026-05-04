@@ -34,6 +34,19 @@ class DownloadRouterTests(unittest.TestCase):
         self.assertTrue(bool(result.get("paper_ok")))
         mock_dl.assert_called_once()
 
+    def test_nature_domain_routes_to_nature_downloader(self) -> None:
+        mock_dl = Mock(return_value={"paper_ok": True, "si_ok": True})
+        with patch.dict("publisher_download.router.DOWNLOADERS", {"www.nature.com": mock_dl}, clear=False):
+            result = download_by_url(
+                "https://www.nature.com/articles/s41565-025-01958-5",
+                "<html></html>",
+                "10.1000/x",
+                task_name="task_a",
+                item_index=2,
+            )
+        self.assertTrue(bool(result.get("paper_ok")))
+        mock_dl.assert_called_once()
+
     def test_unmatched_domain_marks_failed_with_unsupported_site(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             root = Path(temp_dir)

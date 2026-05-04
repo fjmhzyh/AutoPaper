@@ -15,6 +15,7 @@ from publisher_download import (
     iopscience,
     jospt,
     literatum,
+    nature,
     pnas,
     rsc,
     sage,
@@ -49,6 +50,7 @@ DOWNLOADERS = {
     "cdnsciencepub.com": cdnsciencepub.download,
     "www.pnas.org": pnas.download,
     "dom-pubs.pericles-prod.literatumonline.com": literatum.download,
+    "www.nature.com": nature.download,
 }
 
 

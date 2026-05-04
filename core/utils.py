@@ -3,6 +3,7 @@ from __future__ import annotations
 import sys
 import time
 from pathlib import Path
+from urllib.parse import urlparse
 
 from core import gui
 
@@ -96,6 +97,32 @@ def get_current_url() -> str:
     time.sleep(1)
     gui.press("esc")
     return _read_clipboard()
+
+
+def loop_close_tabs(anchor_url: str = "https://www.baidu.com", max_rounds: int = 30) -> bool:
+    target_host = _normalize_host(anchor_url)
+    if not target_host:
+        return False
+
+    rounds = max(1, int(max_rounds))
+    for _ in range(rounds):
+        current_url = get_current_url()
+        current_host = _normalize_host(current_url)
+        if current_host.endswith("baidu.com") or current_host == target_host:
+            return True
+        gui.hotkey("close_tab")
+        time.sleep(0.3)
+    return False
+
+
+def _normalize_host(url: str) -> str:
+    text = str(url or "").strip().lower()
+    if not text:
+        return ""
+    if "://" not in text:
+        text = f"https://{text}"
+    parsed = urlparse(text)
+    return str(parsed.hostname or "").strip().lower()
 
 
 def _read_clipboard() -> str:

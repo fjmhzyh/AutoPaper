@@ -61,6 +61,37 @@ class UtilsPlaceholderTests(unittest.TestCase):
         with patch("core.utils._locate_on_screen", return_value=None):
             self.assertIsNone(utils.locate_image("x.png"))
 
+    def test_loop_close_tabs_returns_true_when_current_is_baidu(self) -> None:
+        with (
+            patch("core.utils.get_current_url", return_value="https://www.baidu.com/s?wd=test"),
+            patch("core.utils.gui.hotkey") as hotkey_mock,
+        ):
+            ok = utils.loop_close_tabs()
+        self.assertTrue(ok)
+        hotkey_mock.assert_not_called()
+
+    def test_loop_close_tabs_closes_until_baidu(self) -> None:
+        with (
+            patch("core.utils.get_current_url", side_effect=["https://example.com/a", "https://example.org/b", "https://www.baidu.com"]),
+            patch("core.utils.gui.hotkey") as hotkey_mock,
+            patch("core.utils.time.sleep", return_value=None),
+        ):
+            ok = utils.loop_close_tabs(max_rounds=10)
+        self.assertTrue(ok)
+        self.assertEqual(hotkey_mock.call_count, 2)
+        for item in hotkey_mock.call_args_list:
+            self.assertEqual(item.args[0], "close_tab")
+
+    def test_loop_close_tabs_stops_at_max_rounds(self) -> None:
+        with (
+            patch("core.utils.get_current_url", return_value="https://example.com/a"),
+            patch("core.utils.gui.hotkey") as hotkey_mock,
+            patch("core.utils.time.sleep", return_value=None),
+        ):
+            ok = utils.loop_close_tabs(max_rounds=3)
+        self.assertFalse(ok)
+        self.assertEqual(hotkey_mock.call_count, 3)
+
 
 if __name__ == "__main__":
     unittest.main()

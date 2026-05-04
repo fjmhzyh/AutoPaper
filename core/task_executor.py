@@ -14,12 +14,13 @@ try:
     from core.app_config import get_config
     from core.csv_manager import CSVManager
     from core.downloader import save_html_content
+    from core.browser_controller import BrowserController
     from core.logger import configure_logging, setup_task_logging
     from publisher_download.router import download_by_url
     from publisher_login.router import login_by_url
     from core.resolve_doi_url import resolve_doi_url
     from core.task_manager import STATISTIC_FIELDNAMES
-    from core.utils import get_html_content
+    from core.utils import get_html_content, loop_close_tabs
 except ModuleNotFoundError:
     PROJECT_ROOT = Path(__file__).resolve().parents[1]
     if str(PROJECT_ROOT) not in sys.path:
@@ -27,12 +28,13 @@ except ModuleNotFoundError:
     from core.app_config import get_config
     from core.csv_manager import CSVManager
     from core.downloader import save_html_content
+    from core.browser_controller import BrowserController
     from core.logger import configure_logging, setup_task_logging
     from publisher_download.router import download_by_url
     from publisher_login.router import login_by_url
     from core.resolve_doi_url import resolve_doi_url
     from core.task_manager import STATISTIC_FIELDNAMES
-    from core.utils import get_html_content
+    from core.utils import get_html_content, loop_close_tabs
 
 
 logger = logging.getLogger(__name__)
@@ -81,12 +83,26 @@ class TaskExecutor:
             pending = self._collect_pending_rows(rows, fields)
             total = len(pending)
             logger.info(f"[任务获取] 任务名-{task_name} DOI总数-{total}条")
+            try:
+                BrowserController().open_tab("https://www.baidu.com")
+                logger.info("[标签清理] 已打开百度基准页")
+            except Exception as exc:
+                logger.warning(f"[标签清理] 打开百度基准页失败: {exc}")
 
             self._update_statistic(task_name, status="running", total_count=total, success_count=0, failed_count=0)
 
             for current_index, (absolute_index, row) in enumerate(pending, start=1):
                 doi = row.get(fields["doi"], "").strip()
                 logger.info(f"[任务进度] 共{total}条，当前第{current_index}条，序号{absolute_index}: DOI - {doi}")
+                logger.info("[标签清理] 开始清理非百度标签页")
+                try:
+                    cleaned = loop_close_tabs(anchor_url="https://www.baidu.com", max_rounds=30)
+                    if cleaned:
+                        logger.info("[标签清理] 清理完成，当前标签为百度")
+                    else:
+                        logger.warning("[标签清理] 达到上限停止")
+                except Exception as exc:
+                    logger.warning(f"[标签清理] 清理失败: {exc}")
 
                 resolved_url = resolve_doi_url(doi)
                 if not resolved_url:

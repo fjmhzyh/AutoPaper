@@ -254,6 +254,8 @@ class TaskExecutorTests(unittest.TestCase):
 
             with (
                 patch("core.task_executor.subprocess.Popen", return_value=fake_proc) as popen_mock,
+                patch("core.task_executor.BrowserController") as browser_cls,
+                patch("core.task_executor.loop_close_tabs", return_value=True),
                 patch("core.task_executor.resolve_doi_url", return_value="https://publisher.com/a"),
                 patch("core.task_executor.login_by_url", return_value=True),
                 patch("core.task_executor.get_html_content", return_value="<html>a</html>"),
@@ -262,7 +264,9 @@ class TaskExecutorTests(unittest.TestCase):
             ):
                 executor.run("task_proc")
 
-            self.assertEqual(popen_mock.call_count, 1)
+            browser_cls.return_value.open_tab.assert_called_once_with("https://www.baidu.com")
+            called_with_yanzhen = any("-m" in call.args[0] and "core.yanzhen" in call.args[0] for call in popen_mock.call_args_list)
+            self.assertTrue(called_with_yanzhen)
             self.assertIsNone(executor._yanzhen_proc)
 
     def test_run_raises_when_yanzhen_quick_exits(self) -> None:
@@ -297,6 +301,44 @@ class TaskExecutorTests(unittest.TestCase):
                     executor.run("task_err")
 
             self.assertIsNone(executor._yanzhen_proc)
+
+    def test_run_opens_baidu_and_calls_loop_close_tabs_each_round(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            tasks_dir = root / "tasks"
+            tasks_dir.mkdir(parents=True, exist_ok=True)
+            task_path = tasks_dir / "task_tabs.csv"
+            task_path.write_text(
+                (
+                    "DOI,DownloaStatus,SIDownloadStatus,failedReason,PublisherUrl,PaperFile,SIFile,HtmlFile,PaperDownloadUrl\n"
+                    "10.1000/a,,,,,,,,\n"
+                    "10.1000/b,,,,,,,,\n"
+                ),
+                encoding="utf-8",
+            )
+            (root / "statistic.csv").write_text(
+                (
+                    "taskName,status,totalCount,paperSuccessCount,paperFailedCount,siSuccessCount,createTime,updateTime\n"
+                    "task_tabs,pending,2,0,0,0,2026-01-01 00:00,2026-01-01 00:00\n"
+                ),
+                encoding="utf-8",
+            )
+
+            fake_browser = SimpleNamespace(open_tab=lambda _url: None)
+            executor = TaskExecutor(project_root=root)
+            with (
+                patch("core.task_executor.BrowserController", return_value=fake_browser) as browser_cls,
+                patch("core.task_executor.loop_close_tabs", return_value=True) as close_tabs_mock,
+                patch("core.task_executor.resolve_doi_url", side_effect=["https://publisher.com/a", "https://publisher.com/b"]),
+                patch("core.task_executor.login_by_url", return_value=True),
+                patch("core.task_executor.get_html_content", return_value="<html></html>"),
+                patch("core.task_executor.download_by_url", return_value={"paper_ok": False, "si_ok": False, "failed_reason": "unsupported site"}),
+                patch("core.task_executor.time.sleep", return_value=None),
+            ):
+                executor.run("task_tabs")
+
+            browser_cls.assert_called_once()
+            self.assertEqual(close_tabs_mock.call_count, 2)
 
 
 if __name__ == "__main__":
