@@ -13,3 +13,6 @@ wheels/
 logs
 download
 tasks
+tests
+release
+packaging
