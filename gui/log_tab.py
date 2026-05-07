@@ -5,13 +5,15 @@ from pathlib import Path
 from tkinter import font as tkfont
 from tkinter import ttk
 
+from core.logger import get_log_dir, get_log_index_path
+
 
 class LogTab(tk.Frame):
     def __init__(self, master):
         super().__init__(master, bg="#f3f5f9")
         self.project_root = Path(__file__).resolve().parents[1]
-        self.log_dir = self.project_root / "logs"
-        self.index_path = self.log_dir / "index.csv"
+        self.log_dir = get_log_dir()
+        self.index_path = get_log_index_path()
         self.statistic_path = self._find_statistic_csv()
 
         self.font_name = self._pick_font()
@@ -239,6 +241,8 @@ class LogTab(tk.Frame):
 
     def _reload_all(self):
         self.statistic_path = self._find_statistic_csv()
+        self.log_dir = get_log_dir()
+        self.index_path = get_log_index_path()
         self.task_to_logs = self._build_task_log_mapping()
         task_rows = self._read_tasks_from_statistic()
         task_names = [row["taskName"] for row in task_rows]

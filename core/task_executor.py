@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import logging
+import os
 import subprocess
 import sys
 import time
@@ -67,7 +68,7 @@ class TaskExecutor:
         )
         self._yanzhen_proc: subprocess.Popen[str] | None = None
 
-    def run(self, task_name_or_path: str) -> None:
+    def run(self, task_name_or_path: str, parent_pid: int = 0) -> None:
         task_path = self._resolve_task_path(task_name_or_path)
         task_name = task_path.stem
         task_csv = CSVManager(task_path)
@@ -92,6 +93,9 @@ class TaskExecutor:
             self._update_statistic(task_name, status="running", total_count=total, success_count=0, failed_count=0)
 
             for current_index, (absolute_index, row) in enumerate(pending, start=1):
+                if not self._is_parent_alive(parent_pid):
+                    logger.warning(f"[任务执行] 检测到父进程已退出(PID={parent_pid})，停止执行")
+                    break
                 doi = row.get(fields["doi"], "").strip()
                 logger.info(f"[任务进度] 共{total}条，当前第{current_index}条，序号{absolute_index}: DOI - {doi}")
                 logger.info("[标签清理] 开始清理非百度标签页")
@@ -128,6 +132,9 @@ class TaskExecutor:
                     logger.info(f"[执行结果] 第{current_index}条执行结束：论文下载-失败， si下载-失败")
                     if current_index < total:
                         logger.info(f"[执行间隔] 等待{int(self.interval_sec)}秒，开始执行第{current_index + 1}条")
+                        if not self._is_parent_alive(parent_pid):
+                            logger.warning(f"[任务执行] 检测到父进程已退出(PID={parent_pid})，停止执行")
+                            break
                         time.sleep(self.interval_sec)
                     continue
 
@@ -208,6 +215,9 @@ class TaskExecutor:
 
                 if current_index < total:
                     logger.info(f"[执行间隔] 等待{int(self.interval_sec)}秒，开始执行第{current_index + 1}条")
+                    if not self._is_parent_alive(parent_pid):
+                        logger.warning(f"[任务执行] 检测到父进程已退出(PID={parent_pid})，停止执行")
+                        break
                     time.sleep(self.interval_sec)
 
             rows_after = task_csv.get_all()
@@ -248,7 +258,14 @@ class TaskExecutor:
     def _start_yanzhen_or_raise(self) -> None:
         if self._yanzhen_proc and self._yanzhen_proc.poll() is None:
             return
-        cmd = [sys.executable, "-m", "core.yanzhen", "--parent-pid", str(getpid())]
+        if getattr(sys, "frozen", False):
+            worker_path = Path(sys.executable).resolve().with_name("AutoPaperWorker")
+            if not worker_path.exists():
+                logger.error(f"[验证码] 启动失败: 未找到执行器 {worker_path}")
+                raise RuntimeError("验证码进程启动失败")
+            cmd = [str(worker_path), "--run-yanzhen", "--parent-pid", str(getpid())]
+        else:
+            cmd = [sys.executable, "-m", "core.yanzhen", "--parent-pid", str(getpid())]
         try:
             self._yanzhen_proc = subprocess.Popen(
                 cmd,
@@ -289,6 +306,30 @@ class TaskExecutor:
             logger.warning(f"[验证码] 停止进程异常: {exc}")
         finally:
             self._yanzhen_proc = None
+
+    @staticmethod
+    def _is_parent_alive(parent_pid: int) -> bool:
+        if int(parent_pid) <= 0:
+            return True
+        if os.name == "nt":
+            import ctypes
+
+            synchronize = 0x00100000
+            wait_timeout = 0x00000102
+            handle = ctypes.windll.kernel32.OpenProcess(synchronize, 0, int(parent_pid))
+            if handle == 0:
+                return False
+            try:
+                status = ctypes.windll.kernel32.WaitForSingleObject(handle, 0)
+                return status == wait_timeout
+            finally:
+                ctypes.windll.kernel32.CloseHandle(handle)
+
+        try:
+            os.kill(int(parent_pid), 0)
+        except OSError:
+            return False
+        return True
 
     def _resolve_task_path(self, task_name_or_path: str) -> Path:
         raw = str(task_name_or_path or "").strip()
@@ -434,6 +475,7 @@ class TaskExecutor:
 def _build_arg_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Execute one task csv by DOI workflow.")
     parser.add_argument("--task", required=True, help="task name or task csv path")
+    parser.add_argument("--parent-pid", type=int, default=0, help="gui parent pid")
     return parser
 
 
@@ -442,4 +484,4 @@ if __name__ == "__main__":
     args = _build_arg_parser().parse_args()
     setup_task_logging(args.task)
     executor = TaskExecutor()
-    executor.run(args.task)
+    executor.run(args.task, parent_pid=max(0, int(args.parent_pid)))

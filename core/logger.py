@@ -48,6 +48,8 @@ def get_project_root() -> Path:
 
 
 def get_log_dir() -> Path:
+    if getattr(sys, "frozen", False):
+        return _packaged_data_root() / "logs"
     return get_project_root() / "logs"
 
 
@@ -161,3 +163,13 @@ def _dedupe_file_path(path: Path) -> Path:
         if not candidate.exists():
             return candidate
         index += 1
+
+
+def _packaged_data_root() -> Path:
+    if sys.platform == "darwin":
+        return Path.home() / "Library" / "Application Support" / "AutoPaper"
+    if sys.platform.startswith("win"):
+        local_app = os.environ.get("LOCALAPPDATA", "")
+        base = Path(local_app) if local_app else (Path.home() / "AppData" / "Local")
+        return base / "AutoPaper"
+    return Path.home() / ".autopaper"

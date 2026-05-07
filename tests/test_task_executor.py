@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import tempfile
 import unittest
+import sys
 from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import patch
@@ -269,6 +270,38 @@ class TaskExecutorTests(unittest.TestCase):
             self.assertTrue(called_with_yanzhen)
             self.assertIsNone(executor._yanzhen_proc)
 
+    def test_run_starts_yanzhen_with_main_entry_when_frozen(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root, _ = self._prepare_task_env(temp_dir, "task_proc_frozen", "10.1000/a,,,,,,,,\n")
+            fake_proc = SimpleNamespace(pid=22345, poll=lambda: None, terminate=lambda: None, wait=lambda timeout=0: None, kill=lambda: None)
+            executor = TaskExecutor(project_root=root)
+            original_has_frozen = hasattr(sys, "frozen")
+            original_frozen = getattr(sys, "frozen", None)
+
+            with (
+                patch("core.task_executor.subprocess.Popen", return_value=fake_proc) as popen_mock,
+                patch("core.task_executor.BrowserController"),
+                patch("core.task_executor.loop_close_tabs", return_value=True),
+                patch("core.task_executor.resolve_doi_url", return_value="https://publisher.com/a"),
+                patch("core.task_executor.login_by_url", return_value=True),
+                patch("core.task_executor.get_html_content", return_value="<html>a</html>"),
+                patch("core.task_executor.download_by_url", return_value={"paper_ok": True, "si_ok": False, "failed_reason": ""}),
+                patch("core.task_executor.time.sleep", return_value=None),
+                patch.object(sys, "frozen", True, create=True),
+                patch("core.task_executor.sys.executable", "/Applications/AutoPaper.app/Contents/MacOS/AutoPaper"),
+                patch("pathlib.Path.exists", return_value=True),
+            ):
+                executor.run("task_proc_frozen")
+
+            called_with_main_entry = any("--run-yanzhen" in call.args[0] for call in popen_mock.call_args_list)
+            self.assertTrue(called_with_main_entry)
+            used_worker = any(call.args[0][0].endswith("AutoPaperWorker") for call in popen_mock.call_args_list if "--run-yanzhen" in call.args[0])
+            self.assertTrue(used_worker)
+            if original_has_frozen:
+                setattr(sys, "frozen", original_frozen)
+            elif hasattr(sys, "frozen"):
+                delattr(sys, "frozen")
+
     def test_run_raises_when_yanzhen_quick_exits(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             root, _ = self._prepare_task_env(temp_dir, "task_quit", "10.1000/a,,,,,,,,\n")
@@ -339,6 +372,43 @@ class TaskExecutorTests(unittest.TestCase):
 
             browser_cls.assert_called_once()
             self.assertEqual(close_tabs_mock.call_count, 2)
+
+    def test_run_stops_when_parent_pid_exits(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            tasks_dir = root / "tasks"
+            tasks_dir.mkdir(parents=True, exist_ok=True)
+            task_path = tasks_dir / "task_parent.csv"
+            task_path.write_text(
+                (
+                    "DOI,DownloaStatus,SIDownloadStatus,failedReason,PublisherUrl,PaperFile,SIFile,HtmlFile,PaperDownloadUrl\n"
+                    "10.1000/a,,,,,,,,\n"
+                    "10.1000/b,,,,,,,,\n"
+                ),
+                encoding="utf-8",
+            )
+            (root / "statistic.csv").write_text(
+                (
+                    "taskName,status,totalCount,paperSuccessCount,paperFailedCount,siSuccessCount,createTime,updateTime\n"
+                    "task_parent,pending,2,0,0,0,2026-01-01 00:00,2026-01-01 00:00\n"
+                ),
+                encoding="utf-8",
+            )
+
+            executor = TaskExecutor(project_root=root)
+            with (
+                patch("core.task_executor.BrowserController"),
+                patch("core.task_executor.loop_close_tabs", return_value=True),
+                patch("core.task_executor.resolve_doi_url", return_value="https://publisher.com/a") as resolve_mock,
+                patch("core.task_executor.login_by_url", return_value=True),
+                patch("core.task_executor.get_html_content", return_value="<html></html>"),
+                patch("core.task_executor.download_by_url", return_value={"paper_ok": False, "si_ok": False, "failed_reason": "unsupported site"}),
+                patch("core.task_executor.time.sleep", return_value=None),
+                patch.object(TaskExecutor, "_is_parent_alive", side_effect=[True, False, False]),
+            ):
+                executor.run("task_parent", parent_pid=99999)
+
+            resolve_mock.assert_called_once()
 
 
 if __name__ == "__main__":

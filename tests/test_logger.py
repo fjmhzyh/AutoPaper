@@ -15,6 +15,24 @@ class LoggerTests(unittest.TestCase):
         log_dir = logger_module.get_log_dir()
         self.assertEqual(log_dir.name, "logs")
 
+    def test_get_log_dir_packaged_on_mac(self) -> None:
+        with (
+            patch("core.logger.sys.frozen", True, create=True),
+            patch("core.logger.sys.platform", "darwin"),
+        ):
+            log_dir = logger_module.get_log_dir()
+        expected = Path.home() / "Library" / "Application Support" / "AutoPaper" / "logs"
+        self.assertEqual(log_dir, expected)
+
+    def test_get_log_dir_packaged_on_windows(self) -> None:
+        with (
+            patch("core.logger.sys.frozen", True, create=True),
+            patch("core.logger.sys.platform", "win32"),
+            patch.dict("core.logger.os.environ", {"LOCALAPPDATA": "/tmp/localapp"}, clear=False),
+        ):
+            log_dir = logger_module.get_log_dir()
+        self.assertEqual(log_dir, Path("/tmp/localapp") / "AutoPaper" / "logs")
+
     def test_setup_script_logging_creates_log_file(self) -> None:
         original_stdout = sys.stdout
         original_stderr = sys.stderr

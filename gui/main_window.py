@@ -1,7 +1,11 @@
 import tkinter as tk
+import traceback
 from tkinter import ttk
 from tkinter import font as tkfont
+from tkinter import messagebox
+from datetime import datetime
 
+from core.logger import get_log_dir
 from .config_tab import ConfigTab
 from .log_tab import LogTab
 from .task_detail_tab import TaskDetailTab
@@ -12,9 +16,11 @@ class MainWindow(tk.Tk):
     def __init__(self):
         super().__init__()
         self.font_name = self._pick_font()
+        self.report_callback_exception = self._handle_callback_exception
         self._setup_window()
         self._setup_styles()
         self._build_tabs()
+        self.protocol("WM_DELETE_WINDOW", self._on_window_close)
 
     def _pick_font(self):
         preferred = [
@@ -107,6 +113,23 @@ class MainWindow(tk.Tk):
             return
         if current == str(self.log_tab):
             self.log_tab.refresh_task_options(preferred_task=self.log_tab.task_name_var.get())
+
+    def _on_window_close(self):
+        try:
+            self.task_manager_tab.shutdown()
+        except Exception:
+            pass
+        self.destroy()
+
+    def _handle_callback_exception(self, exc, val, tb):
+        detail = "".join(traceback.format_exception(exc, val, tb))
+        stamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        log_dir = get_log_dir()
+        log_dir.mkdir(parents=True, exist_ok=True)
+        log_path = log_dir / "gui_error.log"
+        with log_path.open("a", encoding="utf-8") as file_obj:
+            file_obj.write(f"{stamp} [GUI异常]\n{detail}\n")
+        messagebox.showerror("程序异常", f"界面操作发生异常，错误已记录：\n{log_path}")
 
 
 if __name__ == "__main__":

@@ -1,4 +1,5 @@
 import csv
+import os
 import subprocess
 import sys
 import tkinter as tk
@@ -10,12 +11,14 @@ from typing import Callable
 
 try:
     from core.csv_manager import CSVManager
+    from core.create_rss_task import create_rss_task
     from core.task_manager import InvalidCSVFormatError, TaskManager
 except ModuleNotFoundError:
     PROJECT_ROOT = Path(__file__).resolve().parents[1]
     if str(PROJECT_ROOT) not in sys.path:
         sys.path.insert(0, str(PROJECT_ROOT))
     from core.csv_manager import CSVManager
+    from core.create_rss_task import create_rss_task
     from core.task_manager import InvalidCSVFormatError, TaskManager
 
 
@@ -195,6 +198,7 @@ class TaskManagerTab(tk.Frame):
             text="创建 RSS 任务",
             style="Primary.TButton",
             takefocus=False,
+            command=self._on_create_rss_task_clicked,
         ).grid(row=0, column=2, padx=(0, 10))
         ttk.Button(
             toolbar_card,
@@ -335,6 +339,41 @@ class TaskManagerTab(tk.Frame):
             ),
         )
 
+    def _on_create_rss_task_clicked(self):
+        keyword = self._read_keyword()
+        if not keyword:
+            messagebox.showwarning("提示", "请输入关键词")
+            return
+
+        try:
+            result = create_rss_task(keyword=keyword)
+        except ValueError as exc:
+            messagebox.showerror("创建失败", str(exc))
+            return
+        except Exception as exc:
+            messagebox.showerror("创建失败", f"创建 RSS 任务失败：{exc}")
+            return
+
+        self._load_rows()
+        if callable(self.on_tasks_changed):
+            self.on_tasks_changed(str(result.get("task_name", "") or ""))
+        messagebox.showinfo(
+            "创建成功",
+            (
+                f"任务名：{result.get('task_name', '')}\n"
+                f"提取DOI：{result.get('total_extracted', 0)}条\n"
+                f"有效DOI：{result.get('valid_count', 0)}条\n"
+                f"重复DOI：{result.get('duplicate_count', 0)}条\n"
+                f"无效DOI：{result.get('invalid_count', 0)}条"
+            ),
+        )
+
+    def _read_keyword(self) -> str:
+        text = str(self.keyword_entry.get() or "").strip()
+        if text == "请输入关键词":
+            return ""
+        return text
+
     def _on_tree_click(self, event):
         region = self.tree.identify("region", event.x, event.y)
         if region != "cell":
@@ -410,8 +449,9 @@ class TaskManagerTab(tk.Frame):
             self._load_rows()
             return
         try:
+            cmd = self._build_executor_command(task_path)
             self._executor_proc = subprocess.Popen(
-                [sys.executable, "-m", "core.task_executor", "--task", str(task_path)],
+                cmd,
                 cwd=str(self.project_root),
             )
             self._running_task_name = Path(task_name).stem
@@ -422,6 +462,15 @@ class TaskManagerTab(tk.Frame):
             self._executor_proc = None
             self._running_task_name = ""
             messagebox.showerror("启动失败", f"无法启动任务执行：{exc}")
+
+    def _build_executor_command(self, task_path: Path) -> list[str]:
+        parent_pid = str(os.getpid())
+        if getattr(sys, "frozen", False):
+            worker = Path(sys.executable).resolve().with_name("AutoPaperWorker")
+            if not worker.exists():
+                raise FileNotFoundError(f"未找到任务执行器: {worker}")
+            return [str(worker), "--run-task", str(task_path), "--parent-pid", parent_pid]
+        return [sys.executable, "-m", "core.task_executor", "--task", str(task_path), "--parent-pid", parent_pid]
 
     def _task_csv_path(self, task_name: str) -> Path:
         return (self.tasks_dir / f"{Path(task_name).stem}.csv").resolve()
@@ -475,6 +524,10 @@ class TaskManagerTab(tk.Frame):
             self._load_rows()
             if callable(self.on_tasks_changed):
                 self.on_tasks_changed(None)
+
+    def shutdown(self) -> None:
+        if self._is_executor_running():
+            self._stop_running_task()
 
     def _on_delete_action_clicked(self, task_name: str) -> None:
         task_stem = Path(task_name).stem

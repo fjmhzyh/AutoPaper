@@ -7,6 +7,8 @@ from pathlib import Path
 from tkinter import font as tkfont
 from tkinter import messagebox, ttk
 
+from core.downloader import resolve_download_root
+
 
 DETAIL_COLUMNS = (
     "DOI",
@@ -256,7 +258,7 @@ class TaskDetailTab(tk.Frame):
             text="打开系统目录",
             style="Ghost.TButton",
             takefocus=False,
-            command=self._open_project_root,
+            command=self._open_system_download_dir,
         ).grid(row=0, column=4, sticky="e")
 
         table_frame = tk.Frame(detail_card, bg=self.colors["surface"])
@@ -450,12 +452,15 @@ class TaskDetailTab(tk.Frame):
         self._render_rows(filtered)
 
     def _refresh_current_task_detail(self):
-        task_file = self._resolve_task_file(self.current_task_var.get())
-        if not task_file:
-            self._render_rows([])
-            self._set_summary("-", "-", "-", "-", "-")
-            return
-        self._load_task(task_file)
+        try:
+            task_file = self._resolve_task_file(self.current_task_var.get())
+            if not task_file:
+                self._render_rows([])
+                self._set_summary("-", "-", "-", "-", "-")
+                return
+            self._load_task(task_file)
+        except Exception as exc:
+            messagebox.showerror("刷新失败", f"刷新任务详情失败：{exc}")
 
     def _render_rows(self, rows: list[tuple[str, ...]]):
         self.detail_tree.delete(*self.detail_tree.get_children())
@@ -472,8 +477,10 @@ class TaskDetailTab(tk.Frame):
             self.search_var.set("输入查询")
             self.search_entry.configure(fg=self.colors["muted"])
 
-    def _open_project_root(self):
-        target = str(self.project_root)
+    def _open_system_download_dir(self):
+        target_path = resolve_download_root(self.project_root)
+        target_path.mkdir(parents=True, exist_ok=True)
+        target = str(target_path)
         try:
             if sys.platform.startswith("win"):
                 os.startfile(target)  # type: ignore[attr-defined]

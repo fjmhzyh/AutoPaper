@@ -51,3 +51,13 @@ def _read_page_load_sec() -> float:
 mac: ~/Library/Application Support/AutoPaper/download
 win: %LOCALAPPDATA%\\AutoPaper\\download
 3. download目录下按任务名划分，任务名下分别有html,paper,si3个文件夹
+
+
+# rss生成任务流程
+1. 打开pubmed官网
+2. 输入关键词并搜索
+3. 点击 create rss
+4. 点击生成rss订阅链接
+5. 打开订阅链接
+6. 获取里面的doi
+7. 生成rss任务，命名格式为rss-keyword-mmdd,比如rss-pcl-0507,重复时rss-pcl-0507-02。
