@@ -6,12 +6,14 @@ import re
 import shutil
 import sys
 import time
+import logging
 from pathlib import Path
 
 from core import gui
 
 PARTIAL_SUFFIXES = {".crdownload", ".part", ".download", ".tmp"}
 ALLOWED_DOWNLOAD_SUFFIXES = {".pdf", ".zip", ".doc", ".docx", ".xls", ".xlsx", ".csv", ".txt", ".html", ".htm"}
+logger = logging.getLogger(__name__)
 
 
 def default_download_dir() -> Path:
@@ -74,10 +76,10 @@ def print_download(
     target_dir = resolve_download_root(root) / str(task_name).strip() / str(subfolder).strip()
     target_dir.mkdir(parents=True, exist_ok=True)
 
-
     safe_doi = _normalize_doi_for_name(doi)
     filename = f"{prefix}_{max(1, int(item_index)):02d}_{safe_doi}.pdf"
-    target = _dedupe_target(target_dir, filename)
+    target_name = _dedupe_target(target_dir, filename).name
+    before_names = snapshot_download_names()
 
     time.sleep(20)
 
@@ -87,16 +89,29 @@ def print_download(
     time.sleep(5)
     gui.hotkey("select_all")
     time.sleep(1)
-    gui.write(str(target), interval=0.03)
+    gui.write(target_name, interval=0.03)
 
     time.sleep(2)
     gui.press("enter")
     time.sleep(1)
     gui.press("enter", presses=3, interval=0.2)
-    gui.hotkey('close_tab')
-    if not _wait_file_exists(target, timeout_sec=20, poll_sec=0.5):
-        return None
-    return _to_output_path(root, target)
+    gui.hotkey("close_tab")
+    moved_path = move_latest_download_to_task(
+        project_root=root,
+        task_name=task_name,
+        subfolder=subfolder,
+        doi=doi,
+        item_index=item_index,
+        prefix=prefix,
+        before_names=before_names,
+        timeout_sec=30.0,
+        poll_sec=0.5,
+    )
+    if moved_path:
+        logger.info(f"[论文下载] 打印保存后已搬运到任务目录 - {moved_path}")
+    else:
+        logger.warning("[论文下载] 打印保存后搬运失败 - 未检测到新下载文件")
+    return moved_path
 
 
 def resolve_download_root(project_root: str | Path) -> Path:

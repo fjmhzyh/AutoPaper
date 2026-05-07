@@ -29,10 +29,19 @@ class MainWindow(tk.Tk):
         return next((name for name in preferred if name in families), "TkDefaultFont")
 
     def _setup_window(self):
+        width, height = 1200, 650
         self.title("AutoPaper - 论文全自动下载管理工具")
-        self.geometry("1480x820")
-        self.minsize(1200, 700)
+        self.minsize(width, height)
+        self._center_window(width, height)
         self.configure(bg="#f3f5f9")
+
+    def _center_window(self, width: int, height: int) -> None:
+        self.update_idletasks()
+        screen_w = self.winfo_screenwidth()
+        screen_h = self.winfo_screenheight()
+        pos_x = max(0, (screen_w - width) // 2)
+        pos_y = max(0, (screen_h - height) // 2)
+        self.geometry(f"{width}x{height}+{pos_x}+{pos_y}")
 
     def _setup_styles(self):
         style = ttk.Style(self)

@@ -57,7 +57,11 @@ class DownloaderTests(unittest.TestCase):
                 patch("core.downloader.gui.press"),
                 patch("core.downloader.gui.write") as write_mock,
                 patch("core.downloader.time.sleep", return_value=None),
-                patch("core.downloader._wait_file_exists", return_value=True),
+                patch("core.downloader.snapshot_download_names", return_value={"old.pdf"}) as snapshot_mock,
+                patch(
+                    "core.downloader.move_latest_download_to_task",
+                    return_value="download/task_a/paper/paper_03_10.1000_x.pdf",
+                ) as move_mock,
             ):
                 saved = print_download(
                     project_root=root,
@@ -69,7 +73,9 @@ class DownloaderTests(unittest.TestCase):
                 )
 
             self.assertEqual(saved, "download/task_a/paper/paper_03_10.1000_x.pdf")
-            self.assertIn("paper_03_10.1000_x.pdf", write_mock.call_args.args[0])
+            self.assertEqual(write_mock.call_args.args[0], "paper_03_10.1000_x.pdf")
+            snapshot_mock.assert_called_once()
+            move_mock.assert_called_once()
             hotkey_mock.assert_any_call("select_all")
 
     def test_print_download_si_path_contains_si_subfolder(self) -> None:
@@ -80,7 +86,11 @@ class DownloaderTests(unittest.TestCase):
                 patch("core.downloader.gui.press"),
                 patch("core.downloader.gui.write") as write_mock,
                 patch("core.downloader.time.sleep", return_value=None),
-                patch("core.downloader._wait_file_exists", return_value=True),
+                patch("core.downloader.snapshot_download_names", return_value=set()),
+                patch(
+                    "core.downloader.move_latest_download_to_task",
+                    return_value="download/task_a/si/si_03_10.1000_x.pdf",
+                ),
             ):
                 saved = print_download(
                     project_root=root,
@@ -92,7 +102,7 @@ class DownloaderTests(unittest.TestCase):
                 )
 
             self.assertEqual(saved, "download/task_a/si/si_03_10.1000_x.pdf")
-            self.assertIn("/download/task_a/si/si_03_10.1000_x.pdf", write_mock.call_args.args[0].replace("\\", "/"))
+            self.assertEqual(write_mock.call_args.args[0], "si_03_10.1000_x.pdf")
 
     def test_save_html_content_writes_expected_file(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
