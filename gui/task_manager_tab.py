@@ -466,7 +466,7 @@ class TaskManagerTab(tk.Frame):
     def _build_executor_command(self, task_path: Path) -> list[str]:
         parent_pid = str(os.getpid())
         if getattr(sys, "frozen", False):
-            worker = Path(sys.executable).resolve().with_name("AutoPaperWorker")
+            worker = Path(sys.executable).resolve().with_name(_worker_name())
             if not worker.exists():
                 raise FileNotFoundError(f"未找到任务执行器: {worker}")
             return [str(worker), "--run-task", str(task_path), "--parent-pid", parent_pid]
@@ -749,6 +749,10 @@ class TaskManagerTab(tk.Frame):
         if not self.keyword_entry.get().strip():
             self.keyword_entry.insert(0, "请输入关键词")
             self.keyword_entry.configure(fg=self.colors["muted"])
+
+
+def _worker_name() -> str:
+    return "AutoPaperWorker.exe" if sys.platform.startswith("win") else "AutoPaperWorker"
 
 
 def launch_task_manager_tab():

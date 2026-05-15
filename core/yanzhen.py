@@ -7,6 +7,7 @@ import random
 import signal
 import sys
 import time
+import traceback
 from pathlib import Path
 from typing import Any
 
@@ -221,8 +222,15 @@ def _build_arg_parser() -> argparse.ArgumentParser:
 
 
 def main() -> None:
-    args = _build_arg_parser().parse_args()
-    raise SystemExit(run(parent_pid=max(0, int(args.parent_pid))))
+    try:
+        args = _build_arg_parser().parse_args()
+        raise SystemExit(run(parent_pid=max(0, int(args.parent_pid))))
+    except SystemExit:
+        raise
+    except Exception:
+        _log("异常退出:")
+        traceback.print_exc()
+        raise SystemExit(1)
 
 
 if __name__ == "__main__":

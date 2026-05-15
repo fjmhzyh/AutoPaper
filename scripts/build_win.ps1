@@ -1,6 +1,5 @@
 param(
-    [string]$PythonExe = "python",
-    [string]$PyInstallerExe = "pyinstaller",
+    [string]$PythonExe = "",
     [string]$ISCC = "$env:ProgramFiles(x86)\Inno Setup 6\ISCC.exe"
 )
 
@@ -8,14 +7,25 @@ $ErrorActionPreference = "Stop"
 $Root = Split-Path -Parent $PSScriptRoot
 Set-Location $Root
 
+$VenvPython = Join-Path $Root ".venv\Scripts\python.exe"
+if (-not $PythonExe) {
+    if (Test-Path $VenvPython) {
+        $PythonExe = $VenvPython
+    } else {
+        $PythonExe = "python"
+    }
+}
+
 if (-not (Get-Command $PythonExe -ErrorAction SilentlyContinue)) {
     throw "python not found: $PythonExe"
 }
-if (-not (Get-Command $PyInstallerExe -ErrorAction SilentlyContinue)) {
-    throw "pyinstaller not found: $PyInstallerExe. Install via pip."
-}
 if (-not (Test-Path $ISCC)) {
     throw "ISCC not found: $ISCC. Please install Inno Setup 6."
+}
+
+& $PythonExe -c "import PyInstaller, pyautogui, pyperclip, cv2, PIL"
+if ($LASTEXITCODE -ne 0) {
+    throw "[win] dependency check failed. Run: uv sync, or pass -PythonExe path\to\python.exe"
 }
 
 $Version = & $PythonExe scripts/make_release.py version
@@ -23,7 +33,7 @@ $ReleaseDir = & $PythonExe scripts/make_release.py prepare --platform win
 & $PythonExe scripts/make_release.py clean-build
 
 Write-Host "[win] building exe via PyInstaller..."
-& $PyInstallerExe --noconfirm --clean build/autopaper.spec
+& $PythonExe -m PyInstaller --noconfirm --clean build/autopaper.spec
 if ($LASTEXITCODE -ne 0) {
     throw "[win] PyInstaller failed with exit code $LASTEXITCODE"
 }

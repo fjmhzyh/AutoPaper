@@ -27,6 +27,7 @@ def photo(name: str) -> str:
 
 
 def check_keywords_exist(keywords: list[str]) -> tuple[bool, ...]:
+    gui.press('esc',2,0.5)    
     _write_clipboard("")
     gui.hotkey("select_all")
     gui.hotkey("copy")

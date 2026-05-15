@@ -259,7 +259,7 @@ class TaskExecutor:
         if self._yanzhen_proc and self._yanzhen_proc.poll() is None:
             return
         if getattr(sys, "frozen", False):
-            worker_path = Path(sys.executable).resolve().with_name("AutoPaperWorker")
+            worker_path = Path(sys.executable).resolve().with_name(_worker_name())
             if not worker_path.exists():
                 logger.error(f"[验证码] 启动失败: 未找到执行器 {worker_path}")
                 raise RuntimeError("验证码进程启动失败")
@@ -513,6 +513,10 @@ def _mark_task_crashed(executor: TaskExecutor, task_name_or_path: str) -> None:
         )
     except Exception as exc:
         logger.warning(f"[任务执行] 写入崩溃状态失败: {exc}")
+
+
+def _worker_name() -> str:
+    return "AutoPaperWorker.exe" if sys.platform.startswith("win") else "AutoPaperWorker"
 
 
 if __name__ == "__main__":
