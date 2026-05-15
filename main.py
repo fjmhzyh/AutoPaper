@@ -3,8 +3,7 @@ from __future__ import annotations
 import argparse
 from pathlib import Path
 
-from core.logger import configure_logging, setup_task_logging
-from core.task_executor import TaskExecutor
+from core.task_executor import run_task_command
 from core.yanzhen import run as run_yanzhen
 from gui import launch_app
 
@@ -23,10 +22,8 @@ def main() -> None:
         raise SystemExit(run_yanzhen(parent_pid=max(0, int(args.parent_pid))))
     task = str(args.run_task or "").strip()
     if task:
-        configure_logging()
-        setup_task_logging(task)
         project_root = Path(__file__).resolve().parent
-        TaskExecutor(project_root=project_root).run(task, parent_pid=max(0, int(args.parent_pid)))
+        raise SystemExit(run_task_command(task, parent_pid=args.parent_pid, project_root=project_root))
         return
     launch_app()
 

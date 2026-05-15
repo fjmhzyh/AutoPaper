@@ -21,6 +21,8 @@ class MainWindow(tk.Tk):
         self._setup_styles()
         self._build_tabs()
         self.protocol("WM_DELETE_WINDOW", self._on_window_close)
+        self.bind_all("<Command-w>", self._ignore_close_hotkey)
+        self.bind_all("<Control-w>", self._ignore_close_hotkey)
 
     def _pick_font(self):
         preferred = [
@@ -115,11 +117,26 @@ class MainWindow(tk.Tk):
             self.log_tab.refresh_task_options(preferred_task=self.log_tab.task_name_var.get())
 
     def _on_window_close(self):
+        self._write_gui_event_log("收到主窗口关闭事件")
         try:
             self.task_manager_tab.shutdown()
         except Exception:
             pass
         self.destroy()
+
+    def _ignore_close_hotkey(self, _event=None):
+        self._write_gui_event_log("已拦截关闭快捷键")
+        return "break"
+
+    def _write_gui_event_log(self, message: str) -> None:
+        try:
+            stamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            log_dir = get_log_dir()
+            log_dir.mkdir(parents=True, exist_ok=True)
+            with (log_dir / "gui_event.log").open("a", encoding="utf-8") as file_obj:
+                file_obj.write(f"{stamp} [GUI事件] {message}\n")
+        except Exception:
+            pass
 
     def _handle_callback_exception(self, exc, val, tb):
         detail = "".join(traceback.format_exception(exc, val, tb))

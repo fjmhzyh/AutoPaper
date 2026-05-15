@@ -16,18 +16,16 @@ def login(resolved_url: str) -> bool:
     if not host.endswith("nature.com"):
         return True
 
-    access_through_institution,buy_or_subscribe,download_pdf = utils.check_keywords_exist([
+    access_through_institution,buy_or_subscribe, = utils.check_keywords_exist([
         "access through your institution",
         "Buy or subscribe",
-        "download pdf"
     ])
-    if download_pdf:
-        logger.info("[网站登陆] 该文章 无需登陆，可直接下载")
-        return True
     if access_through_institution or buy_or_subscribe:
         logger.info("[网站登陆] 该文章需要登陆下载")
         return _login_use_hotkey()
-    return True
+    else:
+        logger.info("[网站登陆] 该文章 无需登陆，可直接下载")
+        return True
 
 def _login_use_hotkey()->bool:
     logger.info("[网站登陆] 开始执行 nature 登录流程")

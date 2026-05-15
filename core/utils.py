@@ -1,11 +1,15 @@
 from __future__ import annotations
 
+import logging
 import sys
 import time
 from pathlib import Path
 from urllib.parse import urlparse
 
 from core import gui
+
+
+logger = logging.getLogger(__name__)
 
 
 def is_mac() -> bool:
@@ -26,7 +30,7 @@ def check_keywords_exist(keywords: list[str]) -> tuple[bool, ...]:
     _write_clipboard("")
     gui.hotkey("select_all")
     gui.hotkey("copy")
-    time.sleep(0.1)
+    time.sleep(2)
     content = _read_clipboard().lower()
     cancel_select_all()
     return tuple(bool(str(keyword or "").strip()) and str(keyword).lower() in content for keyword in keywords)
@@ -91,22 +95,40 @@ def get_html_content(wait_sec: float = 5.0) -> str:
 
 
 def get_current_url() -> str:
-    gui.hotkey("focus_address_bar")
-    time.sleep(0.5)
-    gui.hotkey("copy")
-    time.sleep(1)
+    for _ in range(3):
+        _write_clipboard("")
+        gui.hotkey("focus_address_bar")
+        time.sleep(0.8)
+        gui.hotkey("copy")
+        time.sleep(0.3)
+        current_url = _read_clipboard().strip()
+        if _looks_like_url(current_url):
+            gui.press("esc")
+            return current_url
     gui.press("esc")
-    return _read_clipboard()
+    logger.warning("[地址解析] 未能从地址栏复制到有效URL")
+    return ""
 
 
-def loop_close_tabs(anchor_url: str = "https://www.baidu.com", max_rounds: int = 30) -> bool:
+def loop_close_tabs(anchor_url: str = "https://www.baidu.com", max_rounds: int = 10) -> bool:
     target_host = _normalize_host(anchor_url)
     if not target_host:
         return False
 
+    try:
+        from core.browser_controller import BrowserController
+
+        BrowserController().open_tab("https://www.qianwen.com/")
+        time.sleep(1)
+    except Exception as exc:
+        logger.warning(f"[标签清理] 聚焦Chrome失败: {exc}")
+
     rounds = max(1, int(max_rounds))
     for _ in range(rounds):
         current_url = get_current_url()
+        if not current_url:
+            logger.warning("[标签清理] 未获取到当前URL，停止清理")
+            return False
         current_host = _normalize_host(current_url)
         if current_host.endswith("baidu.com") or current_host == target_host:
             return True
@@ -123,6 +145,14 @@ def _normalize_host(url: str) -> str:
         text = f"https://{text}"
     parsed = urlparse(text)
     return str(parsed.hostname or "").strip().lower()
+
+
+def _looks_like_url(value: str) -> bool:
+    text = str(value or "").strip()
+    if not text or any(ch.isspace() for ch in text):
+        return False
+    parsed = urlparse(text)
+    return parsed.scheme in {"http", "https"} and bool(parsed.hostname)
 
 
 def _read_clipboard() -> str:

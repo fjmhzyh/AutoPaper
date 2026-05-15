@@ -17,8 +17,6 @@ def login(resolved_url: str) -> bool:
         return True
 
     logger.info("[网站登陆] 执行 wiley 登录流程")
-    login_button_img = utils.photo("advanced.onlinelibrary.wiley.com1.png")
-    submit_button_img = utils.photo("advanced.onlinelibrary.wiley.com2.png")
 
     open_access, full_access, zhejiang_university = utils.check_keywords_exist(["open access", "full access","zhejiang university"])
     if zhejiang_university:
@@ -30,6 +28,8 @@ def login(resolved_url: str) -> bool:
     
     return _login_use_hotkey()
 
+    login_button_img = utils.photo("advanced.onlinelibrary.wiley.com1.png")
+    submit_button_img = utils.photo("advanced.onlinelibrary.wiley.com2.png")
     return _run_wiley_two_step_flow(login_button_img, submit_button_img)
 
 def _login_use_hotkey()->bool:
@@ -57,6 +57,8 @@ def _login_use_hotkey()->bool:
         time.sleep(20)
         utils.get_current_url()
         gui.press('enter')
+        return True
+    return False
 
 def _run_wiley_two_step_flow(login_button_img: str, submit_button_img: str) -> bool:
     clicked_first = False

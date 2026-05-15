@@ -9,6 +9,7 @@ from publisher_download.common import download_by_template_map
 logger = logging.getLogger(__name__)
 
 HOST_TO_PAPER_URLS = {
+    "pnas.org": "https://www.pnas.org/doi/pdf/{doi}?download=true",
     "www.pnas.org": "https://www.pnas.org/doi/pdf/{doi}?download=true",
 }
 

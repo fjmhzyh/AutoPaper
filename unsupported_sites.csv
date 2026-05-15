@@ -1,198 +1,808 @@
 ﻿time,taskName,doi,host,url
-2026-05-04 09:57:44,tasks_2026_0503_1953,10.1073/pnas.2519819123,unknown,"--md-background-color: rgb(248, 249, 250);
-    --md-loading-message-color: #6e6e6e;
-    --md-toolbar-height: 56px;
-    --md-toolbar-border: 1px solid #e0e0e0;
-    --google-blue-50-rgb: 232,240,254;
-    --google-blue-50: rgb(var(--google-blue-50-rgb));
-    --google-blue-100-rgb: 210,227,252;
-    --google-blue-100: rgb(var(--google-blue-100-rgb));
-    --google-blue-200-rgb: 174,203,250;
-    --google-blue-200: rgb(var(--google-blue-200-rgb));
-    --google-blue-300-rgb: 138,180,248;
-    --google-blue-300: rgb(var(--google-blue-300-rgb));
-    --google-blue-400-rgb: 102,157,246;
-    --google-blue-400: rgb(var(--google-blue-400-rgb));
-    --google-blue-500-rgb: 66,133,244;
-    --google-blue-500: rgb(var(--google-blue-500-rgb));
-    --google-blue-600-rgb: 26,115,232;
-    --google-blue-600: rgb(var(--google-blue-600-rgb));
-    --google-blue-700-rgb: 25,103,210;
-    --google-blue-700: rgb(var(--google-blue-700-rgb));
-    --google-blue-800-rgb: 24,90,188;
-    --google-blue-800: rgb(var(--google-blue-800-rgb));
-    --google-blue-900-rgb: 23,78,166;
-    --google-blue-900: rgb(var(--google-blue-900-rgb));
-    --google-green-50-rgb: 230,244,234;
-    --google-green-50: rgb(var(--google-green-50-rgb));
-    --google-green-200-rgb: 168,218,181;
-    --google-green-200: rgb(var(--google-green-200-rgb));
-    --google-green-300-rgb: 129,201,149;
-    --google-green-300: rgb(var(--google-green-300-rgb));
-    --google-green-400-rgb: 91,185,116;
-    --google-green-400: rgb(var(--google-green-400-rgb));
-    --google-green-500-rgb: 52,168,83;
-    --google-green-500: rgb(var(--google-green-500-rgb));
-    --google-green-600-rgb: 30,142,62;
-    --google-green-600: rgb(var(--google-green-600-rgb));
-    --google-green-700-rgb: 24,128,56;
-    --google-green-700: rgb(var(--google-green-700-rgb));
-    --google-green-800-rgb: 19,115,51;
-    --google-green-800: rgb(var(--google-green-800-rgb));
-    --google-green-900-rgb: 13,101,45;
-    --google-green-900: rgb(var(--google-green-900-rgb));
-    --google-grey-50-rgb: 248,249,250;
-    --google-grey-50: rgb(var(--google-grey-50-rgb));
-    --google-grey-100-rgb: 241,243,244;
-    --google-grey-100: rgb(var(--google-grey-100-rgb));
-    --google-grey-200-rgb: 232,234,237;
-    --google-grey-200: rgb(var(--google-grey-200-rgb));
-    --google-grey-300-rgb: 218,220,224;
-    --google-grey-300: rgb(var(--google-grey-300-rgb));
-    --google-grey-400-rgb: 189,193,198;
-    --google-grey-400: rgb(var(--google-grey-400-rgb));
-    --google-grey-500-rgb: 154,160,166;
-    --google-grey-500: rgb(var(--google-grey-500-rgb));
-    --google-grey-600-rgb: 128,134,139;
-    --google-grey-600: rgb(var(--google-grey-600-rgb));
-    --google-grey-700-rgb: 95,99,104;
-    --google-grey-700: rgb(var(--google-grey-700-rgb));
-    --google-grey-800-rgb: 60,64,67;
-    --google-grey-800: rgb(var(--google-grey-800-rgb));
-    --google-grey-900-rgb: 32,33,36;
-    --google-grey-900: rgb(var(--google-grey-900-rgb));
-    --google-grey-900-white-4-percent: #292a2d;
-    --google-purple-200-rgb: 215,174,251;
-    --google-purple-200: rgb(var(--google-purple-200-rgb));
-    --google-purple-900-rgb: 104,29,168;
-    --google-purple-900: rgb(var(--google-purple-900-rgb));
-    --google-red-100-rgb: 244,199,195;
-    --google-red-100: rgb(var(--google-red-100-rgb));
-    --google-red-300-rgb: 242,139,130;
-    --google-red-300: rgb(var(--google-red-300-rgb));
-    --google-red-500-rgb: 234,67,53;
-    --google-red-500: rgb(var(--google-red-500-rgb));
-    --google-red-600-rgb: 217,48,37;
-    --google-red-600: rgb(var(--google-red-600-rgb));
-    --google-red-700-rgb: 197,57,41;
-    --google-red-700: rgb(var(--google-red-700-rgb));
-    --google-yellow-50-rgb: 254,247,224;
-    --google-yellow-50: rgb(var(--google-yellow-50-rgb));
-    --google-yellow-100-rgb: 254,239,195;
-    --google-yellow-100: rgb(var(--google-yellow-100-rgb));
-    --google-yellow-200-rgb: 253,226,147;
-    --google-yellow-200: rgb(var(--google-yellow-200-rgb));
-    --google-yellow-300-rgb: 253,214,51;
-    --google-yellow-300: rgb(var(--google-yellow-300-rgb));
-    --google-yellow-400-rgb: 252,201,52;
-    --google-yellow-400: rgb(var(--google-yellow-400-rgb));
-    --google-yellow-500-rgb: 251,188,4;
-    --google-yellow-500: rgb(var(--google-yellow-500-rgb));
-    --google-yellow-700-rgb: 240,147,0;
-    --google-yellow-700: rgb(var(--google-yellow-700-rgb));
-    --cr-card-background-color: white;
-    --cr-shadow-key-color_: color-mix(in srgb,var(--cr-shadow-color) 30%,transparent);
-    --cr-shadow-ambient-color_: color-mix(in srgb,var(--cr-shadow-color) 15%,transparent);
-    --cr-elevation-1: var(--cr-shadow-key-color_) 0 1px 2px 0,var(--cr-shadow-ambient-color_) 0 1px 3px 1px;
-    --cr-elevation-2: var(--cr-shadow-key-color_) 0 1px 2px 0,var(--cr-shadow-ambient-color_) 0 2px 6px 2px;
-    --cr-elevation-3: var(--cr-shadow-key-color_) 0 1px 3px 0,var(--cr-shadow-ambient-color_) 0 4px 8px 3px;
-    --cr-elevation-4: var(--cr-shadow-key-color_) 0 2px 3px 0,var(--cr-shadow-ambient-color_) 0 6px 10px 4px;
-    --cr-elevation-5: var(--cr-shadow-key-color_) 0 4px 4px 0,var(--cr-shadow-ambient-color_) 0 8px 12px 6px;
-    --cr-card-shadow: var(--cr-elevation-2);
-    --cr-focused-item-color: var(--google-grey-300);
-    --cr-form-field-label-color: var(--google-grey-700);
-    --cr-hairline-rgb: 0,0,0;
-    --cr-iph-anchor-highlight-color: rgba(var(--google-blue-600-rgb),0.1);
-    --cr-menu-background-color: white;
-    --cr-menu-background-focus-color: var(--google-grey-400);
-    --cr-menu-shadow: var(--cr-elevation-2);
-    --cr-separator-color: rgba(0,0,0,.06);
-    --cr-title-text-color: rgb(90,90,90);
-    --cr-scrollable-border-color: var(--google-grey-300);
-    --cr-button-edge-spacing: 12px;
-    --cr-controlled-by-spacing: 24px;
-    --cr-default-input-max-width: 264px;
-    --cr-icon-ripple-size: 36px;
-    --cr-icon-ripple-padding: 8px;
-    --cr-icon-size: 20px;
-    --cr-icon-button-margin-start: 16px;
-    --cr-icon-ripple-margin: calc(var(--cr-icon-ripple-padding) * -1);
-    --cr-section-min-height: 48px;
-    --cr-section-two-line-min-height: 64px;
-    --cr-section-padding: 20px;
-    --cr-section-vertical-padding: 12px;
-    --cr-section-indent-width: 40px;
-    --cr-section-indent-padding: calc(var(--cr-section-padding) + var(--cr-section-indent-width));
-    --cr-section-vertical-margin: 21px;
-    --cr-centered-card-max-width: 680px;
-    --cr-centered-card-width-percentage: 0.96;
-    --cr-hairline: 1px solid rgba(var(--cr-hairline-rgb),.14);
-    --cr-separator-height: 1px;
-    --cr-separator-line: var(--cr-separator-height) solid var(--cr-separator-color);
-    --cr-toolbar-overlay-animation-duration: 150ms;
-    --cr-toolbar-height: 56px;
-    --cr-card-border-radius: 8px;
-    --cr-disabled-opacity: .38;
-    --cr-form-field-bottom-spacing: 16px;
-    --cr-form-field-label-font-size: .625rem;
-    --cr-form-field-label-height: 1em;
-    --cr-form-field-label-line-height: 1;
-    --cr-fallback-color-outline: rgb(116,119,117);
-    --cr-fallback-color-primary: rgb(11,87,208);
-    --cr-fallback-color-on-primary: rgb(255,255,255);
-    --cr-fallback-color-primary-container: rgb(211,227,253);
-    --cr-fallback-color-on-primary-container: rgb(4,30,73);
-    --cr-fallback-color-secondary-container: rgb(194,231,255);
-    --cr-fallback-color-on-secondary-container: rgb(0,29,53);
-    --cr-fallback-color-neutral-container: rgb(242,242,242);
-    --cr-fallback-color-neutral-outline: rgb(199,199,199);
-    --cr-fallback-color-surface: rgb(255,255,255);
-    --cr-fallback-color-surface1: rgb(248,250,253);
-    --cr-fallback-color-surface2: rgb(243,246,252);
-    --cr-fallback-color-surface3: rgb(239,243,250);
-    --cr-fallback-color-surface5: rgb(234,240,249);
-    --cr-fallback-color-on-surface-rgb: 31,31,31;
-    --cr-fallback-color-on-surface: rgb(var(--cr-fallback-color-on-surface-rgb));
-    --cr-fallback-color-surface-variant: rgb(225,227,225);
-    --cr-fallback-color-on-surface-variant: rgb(68,71,70);
-    --cr-fallback-color-on-surface-subtle: rgb(71,71,71);
-    --cr-fallback-color-inverse-primary: rgb(168,199,250);
-    --cr-fallback-color-inverse-surface: rgb(48,48,48);
-    --cr-fallback-color-inverse-on-surface: rgb(242,242,242);
-    --cr-fallback-color-tonal-container: rgb(211,227,253);
-    --cr-fallback-color-on-tonal-container: rgb(4,30,73);
-    --cr-fallback-color-tonal-outline: rgb(168,199,250);
-    --cr-fallback-color-error: rgb(179,38,30);
-    --cr-fallback-color-divider: rgb(211,227,253);
-    --cr-fallback-color-state-hover-on-prominent_: rgba(253,252,251,.1);
-    --cr-fallback-color-state-on-subtle-rgb_: 31,31,31;
-    --cr-fallback-color-state-hover-on-subtle_: rgba(var(--cr-fallback-color-state-on-subtle-rgb_),.06);
-    --cr-fallback-color-state-ripple-neutral-on-subtle_: rgba(var(--cr-fallback-color-state-on-subtle-rgb_),.08);
-    --cr-fallback-color-state-ripple-primary-rgb_: 124,172,248;
-    --cr-fallback-color-state-ripple-primary_: rgba(var(--cr-fallback-color-state-ripple-primary-rgb_),0.32);
-    --cr-fallback-color-base-container: rgb(236,239,247);
-    --cr-fallback-color-disabled-background: rgba(var(--cr-fallback-color-on-surface-rgb),.12);
-    --cr-fallback-color-disabled-foreground: rgba(var(--cr-fallback-color-on-surface-rgb),var(--cr-disabled-opacity));
-    --cr-hover-background-color: var(--color-sys-state-hover,rgba(var(--cr-fallback-color-on-surface-rgb),.08));
-    --cr-hover-on-prominent-background-color: var(--color-sys-state-hover-on-prominent,var(--cr-fallback-color-state-hover-on-prominent_));
-    --cr-hover-on-subtle-background-color: var(--color-sys-state-hover-on-subtle,var(--cr-fallback-color-state-hover-on-subtle_));
-    --cr-active-background-color: var(--color-sys-state-pressed,rgba(var(--cr-fallback-color-on-surface-rgb),.12));
-    --cr-active-on-primary-background-color: var(--color-sys-state-ripple-primary,var(--cr-fallback-color-state-ripple-primary_));
-    --cr-active-neutral-on-subtle-background-color: var(--color-sys-state-ripple-neutral-on-subtle,var(--cr-fallback-color-state-ripple-neutral-on-subtle_));
-    --cr-focus-outline-color: var(--color-sys-state-focus-ring,var(--cr-fallback-color-primary));
-    --cr-focus-outline-inverse-color: var(--color-sys-state-focus-ring-inverse,var(--cr-fallback-color-inverse-primary));
-    --cr-primary-text-color: var(--color-primary-foreground,var(--cr-fallback-color-on-surface));
-    --cr-secondary-text-color: var(--color-secondary-foreground,var(--cr-fallback-color-on-surface-variant));
-    --cr-link-color: var(--color-link-foreground-default,var(--cr-fallback-color-primary));
-    --cr-button-height: 36px;
-    --cr-shadow-color: var(--color-sys-shadow,rgb(0,0,0));
-    --cr-checked-color: var(--color-checkbox-foreground-checked,var(--cr-fallback-color-primary));
-    height: 100%;
-    display: flex;
-    margin: 0;
-    font-family: system-ui,PingFang SC,STHeiti,sans-serif;
-    font-size: 81.25%;"
+2026-05-15 13:47:58,tasks_2026_0514_1602,10.1093/bib/bbag092,academic.oup.com,https://academic.oup.com/bib/article/27/2/bbag092/8503315
+2026-05-14 16:05:03,t,10.x,example.com,https://example.com/a
+2026-05-14 18:53:28,tasks_2026_0514_1602,10.1021/acs.nanolett.5c06525,unknown,"Skip to main content
+Advertisement
+
+Nature Materials
+View all journals
+Search
+Log in
+Explore content
+About the journal
+Publish with us
+Subscribe
+Sign up for alerts
+RSS feed
+nature  nature materials  articles  article
+Article
+Published: 17 March 2026
+Crosslinked ionizable lipids reprogram dendritic cell metabolism for potent mRNA vaccination
+Dongyoon Kim, Ningqiang Gong, Mohamad-Gabriel Alameh, Emily L. Han, Hanxun Wang, Jinjin Wang, Ellie Feng, Il-Chul Yoon, Amanda M. Murray, Qiangqiang Shi, So-Jeong Moon, Kaitlin Mrksich, Drew Weissman & Michael J. Mitchell 
+Nature Materials (2026) Cite this article
+
+5252 Accesses
+
+51 Altmetric
+
+Metricsdetails
+
+Abstract
+Modulating metabolism in immune cells is an effective approach to induce desired immune responses. Here we develop a lipid nanoparticle (LNP) capable of metabolic reprogramming of dendritic cells for mRNA vaccine applications. Using imidoester-based conjugation chemistry, we design a crosslinked ionizable lipid, C12-2aN, which possesses intrinsic metabolic modulatory properties. This multifunctional ionizable lipid not only promotes effective mRNA expression by facilitating endosomal escape but also stimulates glycolysis through mTORC2 pathway activation. As both an mRNA carrier and a metabolic modulator, C12-2aN LNPs lead to potent vaccine efficacy in both SARS-CoV-2 and OVA cancer vaccine models, resulting in stronger neutralization of pseudovirus infection and improved survival rates, respectively, compared with control LNPs without the crosslinker. Moreover, C12-2aN LNPs outperformed FDA-approved LNPs in terms of reduced off-target delivery and lower immunogenicity. Overall, the integration of mRNA delivery and metabolic reprogramming induced by the ionizable lipid component presents significant potential for next-generation mRNA LNP vaccines.
+
+This is a preview of subscription content, access via your institution
+
+Access options
+Access through your institution
+Access Nature and 54 other Nature Portfolio journals
+
+Get Nature+, our best-value online-access subscription
+
+27,99 € / 30 days
+
+cancel any time
+
+Learn more
+Subscribe to this journal
+
+Receive 12 print issues and online access
+
+251,40 € per year
+
+only 20,95 € per issue
+
+Learn more
+Buy this article
+
+Purchase on SpringerLink
+Instant access to the full article PDF.
+39,95 €
+
+Prices may be subject to local taxes which are calculated during checkout
+
+Additional access options:
+Log in
+Learn about institutional subscriptions
+Read our FAQs
+Contact customer support
+Similar content being viewed by others
+
+Adjuvant lipidoid-substituted lipid nanoparticles augment the immunogenicity of SARS-CoV-2 mRNA vaccines
+Article 26 June 2023
+
+Lipid Nanoparticle Development for A Fluvid mRNA Vaccine Targeting Seasonal Influenza and SARS-CoV-2
+Article Open access
+11 June 2025
+
+Enhancing the immunogenicity of lipid-nanoparticle mRNA vaccines by adjuvanting the ionizable lipid and the mRNA
+Article 07 September 2023
+Data availability
+The data supporting the findings of this study are available within the Article and its Supplementary Information. Bulk RNA-sequencing data have been deposited in the NCBI Sequence Read Archive (accession number PRJNA1183400). Single-cell RNA-sequencing data has been deposited in the NCBI Sequence Read Archive (accession number PRJNA1314823). Source data are provided with this paper.
+
+References
+Paludan, S. R., Pradeu, T., Masters, S. L. & Mogensen, T. H. Constitutive immune mechanisms: mediators of host defence and immune regulation. Nat. Rev. Immunol. 21, 137–150 (2021).
+
+Article
+ 
+CAS
+ 
+PubMed
+ 
+Google Scholar
+ 
+
+Leone, R. D. & Powell, J. D. Metabolism of immune cells in cancer. Nat. Rev. Cancer 20, 516–531 (2020).
+
+Article
+ 
+CAS
+ 
+PubMed
+ 
+PubMed Central
+ 
+Google Scholar
+ 
+
+Jung, J., Zeng, H. & Horng, T. Metabolism as a guiding force for immunity. Nat. Cell Biol. 21, 85–93 (2019).
+
+Article
+ 
+CAS
+ 
+PubMed
+ 
+Google Scholar
+ 
+
+Ganeshan, K. & Chawla, A. Metabolic regulation of immune responses. Annu. Rev. Immunol. 32, 609–634 (2014).
+
+Article
+ 
+CAS
+ 
+PubMed
+ 
+PubMed Central
+ 
+Google Scholar
+ 
+
+Menk, A. V. et al. Early TCR signaling induces rapid aerobic glycolysis enabling distinct acute T cell effector functions. Cell Rep. 22, 1509–1521 (2018).
+
+Article
+ 
+CAS
+ 
+PubMed
+ 
+PubMed Central
+ 
+Google Scholar
+ 
+
+Pearce, E. L. et al. Enhancing CD8 T-cell memory by modulating fatty acid metabolism. Nature 460, 103–107 (2009).
+
+Article
+ 
+CAS
+ 
+PubMed
+ 
+PubMed Central
+ 
+Google Scholar
+ 
+
+Kastenmüller, W., Kastenmüller, K., Kurts, C. & Seder, R. A. Dendritic cell-targeted vaccines—hope or hype?. Nat. Rev. Immunol. 14, 705–711 (2014).
+
+Article
+ 
+PubMed
+ 
+Google Scholar
+ 
+
+Giovanelli, P., Sandoval, T. A. & Cubillos-Ruiz, J. R. Dendritic cell metabolism and function in tumors. Trends Immunol. 40, 699–718 (2019).
+
+Article
+ 
+CAS
+ 
+PubMed
+ 
+Google Scholar
+ 
+
+Pearce, E. J. & Everts, B. Dendritic cell metabolism. Nat. Rev. Immunol. 15, 18–29 (2015).
+
+Article
+ 
+CAS
+ 
+PubMed
+ 
+PubMed Central
+ 
+Google Scholar
+ 
+
+Perez, C. R. & De Palma, M. Engineering dendritic cell vaccines to improve cancer immunotherapy. Nat. Commun. 10, 5408 (2019).
+
+Article
+ 
+PubMed
+ 
+PubMed Central
+ 
+Google Scholar
+ 
+
+Everts, B. et al. TLR-driven early glycolytic reprogramming via the kinases TBK1-IKKɛ supports the anabolic demands of dendritic cell activation. Nat. Immunol. 15, 323–332 (2014).
+
+Article
+ 
+CAS
+ 
+PubMed
+ 
+PubMed Central
+ 
+Google Scholar
+ 
+
+Cullis, P. R. & Felgner, P. L. The 60-year evolution of lipid nanoparticles for nucleic acid delivery. Nat. Rev. Drug Discov. 23, 709–722 (2024).
+
+Article
+ 
+CAS
+ 
+PubMed
+ 
+Google Scholar
+ 
+
+Kon, E., Ad-El, N., Hazan-Halevy, I., Stotsky-Oterin, L. & Peer, D. Targeting cancer with mRNA-lipid nanoparticles: key considerations and future prospects. Nat. Rev. Clinc. Oncol. 20, 739–754 (2023).
+
+Article
+ 
+CAS
+ 
+Google Scholar
+ 
+
+Huang, X. et al. The landscape of mRNA nanomedicine. Nat. Med. 28, 2273–2287 (2022).
+
+Article
+ 
+CAS
+ 
+PubMed
+ 
+Google Scholar
+ 
+
+Hou, Z., Zaks, T., Langer, R. & Dong, Y. Lipid nanoparticles for mRNA delivery. Nat. Rev. Mater. 12, 1078–1094 (2021).
+
+Article
+ 
+Google Scholar
+ 
+
+Hand, E. S. & Jencks, W. P. Mechanism of the reaction of imido esters with amines. J. Am. Chem. Soc. 84, 3505–3514 (1962).
+
+Article
+ 
+CAS
+ 
+Google Scholar
+ 
+
+Hunter, M. J. & Ludwig, M. L. The reaction of imidoesters with proteins and related small molecules. J. Am. Chem. Soc. 84, 3419–3504 (1962).
+
+Article
+ 
+Google Scholar
+ 
+
+Liu, S. et al. Membrane destabilizing ionizable phospholipids for organ selective mRNA delivery and CRISPR/Cas gene editing. Nat. Mater. 20, 701–710 (2021).
+
+Article
+ 
+CAS
+ 
+PubMed
+ 
+PubMed Central
+ 
+Google Scholar
+ 
+
+Xu, Y. & Szoka, F. C. Mechanism of DNA release from cationic liposome/DNA complexes used in cell transfection. Biochemistry 35, 5616–5623 (1996).
+
+Article
+ 
+CAS
+ 
+PubMed
+ 
+Google Scholar
+ 
+
+Zainal Abidin, A. et al. Amidine containing compounds: antimicrobial activity and its potential in combating antimicrobial resistance. Heliyon 10, e32010 (2024).
+
+Article
+ 
+CAS
+ 
+PubMed
+ 
+PubMed Central
+ 
+Google Scholar
+ 
+
+Sondi, S. M., Rani, R., Roy, P., Agrawal, S. K. & Saxena, A. K. Synthesis, anti-inflammatory, and anticancer activity evaluation of some heterocyclic amidine and bis-amidine derivatives. J. Heterocyclic. Chem. 48, 921–926 (2011).
+
+Article
+ 
+Google Scholar
+ 
+
+Samsonowicz-Górski, J., Brodzka, A., Ostaszewski, R. & Koszelewski, D. Screening for amidoxime reductases in plant roots and Saccharomyces cerevisiae—development of biocatalytic method for chemoselective amidine synthesis. Bioorg. Chem. 124, 105815 (2022).
+
+Article
+ 
+PubMed
+ 
+Google Scholar
+ 
+
+Foretz, M., Guigas, B. & Viollet, B. Metformin: update on mechanisms of action and repurposing potential. Nat. Rev. Endocrinol. 19, 460–476 (2023).
+
+Article
+ 
+CAS
+ 
+PubMed
+ 
+PubMed Central
+ 
+Google Scholar
+ 
+
+Jang, J. Y. et al. Structural basis for the enhanced anti-diabetic efficacy of lobeglitazone on PPARγ. Sci. Rep. 8, 31 (2018).
+
+Article
+ 
+PubMed
+ 
+PubMed Central
+ 
+Google Scholar
+ 
+
+Zhang, Z. et al. Brain-restricted mTOR inhibition with binary pharmacology. Nature 609, 822–828 (2022).
+
+Article
+ 
+CAS
+ 
+PubMed
+ 
+PubMed Central
+ 
+Google Scholar
+ 
+
+Saxton, R. A. & Sabatini, D. M. mTOR signaling in growth, metabolism, and disease. Cell 168, 960–976 (2017).
+
+Article
+ 
+CAS
+ 
+PubMed
+ 
+PubMed Central
+ 
+Google Scholar
+ 
+
+Kazyken, D. et al. AMPK directly activates mTORC2 to promote cell survival during acute energetic stress. Sci. Signal. 12, eaav3249 (2019).
+
+Article
+ 
+CAS
+ 
+PubMed
+ 
+PubMed Central
+ 
+Google Scholar
+ 
+
+Zhang, P. et al. WSSV exploits AMPK to activate mTORC2 signaling for proliferation by enhancing aerobic glycolysis. Commun. Biol. 6, 361 (2023).
+
+Article
+ 
+CAS
+ 
+PubMed
+ 
+PubMed Central
+ 
+Google Scholar
+ 
+
+Masui, K. et al. mTOR complex 2 controls glycolytic metabolism in glioblastoma through FoxO acetylation and upregulation of c-Myc. Cell Metab. 18, 726–739 (2013).
+
+Article
+ 
+CAS
+ 
+PubMed
+ 
+PubMed Central
+ 
+Google Scholar
+ 
+
+Li, M. et al. mTORC2-AKT signaling to PFKFB2 activates glycolysis that enhances stemness and tumorigenicity of intestinal epithelial cells. FASEB J. 38, e23532 (2024).
+
+Article
+ 
+CAS
+ 
+PubMed
+ 
+Google Scholar
+ 
+
+Hagiwara, A. et al. Hepatic mTORC2 activates glycolysis and lipogenesis through Akt, glucokinase, and SREBP1c. Cell Metab. 15, 725–738 (2012).
+
+Article
+ 
+CAS
+ 
+PubMed
+ 
+Google Scholar
+ 
+
+Lee, Y., Jeong, M., Park, J., Jung, H. & Lee, H. Immunogenicity of lipid nanoparticles and its impact on the efficacy of mRNA vaccines and therapeutics. Exp. Mol. Med. 55, 2085–2096 (2023).
+
+Article
+ 
+CAS
+ 
+PubMed
+ 
+PubMed Central
+ 
+Google Scholar
+ 
+
+Margraf, A., Lowell, C. A. & Zarbock, A. Neutrophils in acute inflammation: current concepts and translational implications. Blood 139, 2130–2144 (2022).
+
+Article
+ 
+CAS
+ 
+PubMed
+ 
+PubMed Central
+ 
+Google Scholar
+ 
+
+Binici, B., Rattray, Z., Zinger, A. & Perrie, Y. Exploring the impact of commonly used ionizable and pegylated lipids on mRNA-LNPs: a combined in vitro and preclinical perspective. J. Control. Release 377, 162–173 (2025).
+
+Article
+ 
+CAS
+ 
+PubMed
+ 
+Google Scholar
+ 
+
+Zhang, W. et al. The expression kinetics and immunogenicity of lipid nanoparticles delivering plasmid DNA and mRNA in mice. Vaccines 11, 1580 (2023).
+
+Article
+ 
+CAS
+ 
+PubMed
+ 
+PubMed Central
+ 
+Google Scholar
+ 
+
+Yasmin, F. et al. Adverse events following COVID-19 mRNA vaccines: a systematic review of cardiovascular complication, thrombosis, and thrombocytopenia. Immun. Inflamm. Dis. 11, e807 (2023).
+
+Article
+ 
+CAS
+ 
+PubMed
+ 
+PubMed Central
+ 
+Google Scholar
+ 
+
+Stylianopoulos, T. et al. Diffusion of particles in the extracellular matrix: the effect of repulsive electrostatic interactions. Biophys. J. 99, 1342–1349 (2010).
+
+Article
+ 
+CAS
+ 
+PubMed
+ 
+PubMed Central
+ 
+Google Scholar
+ 
+
+Dilliard, S. A., Chen, Q. & Siegwart, D. J. On the mechanism of tissue-specific mRNA delivery by selective organ targeting nanoparticles. Proc. Natl Acad. Sci. USA 118, e2109256118 (2021).
+
+Article
+ 
+CAS
+ 
+PubMed
+ 
+PubMed Central
+ 
+Google Scholar
+ 
+
+Møller, S. H., Wang, L. & Ho, P. C. Metabolic programming in dendritic cells tailors immune responses and homeostasis. Cell. Mol. Immunol. 19, 370–383 (2022).
+
+Article
+ 
+PubMed
+ 
+Google Scholar
+ 
+
+Brombacher, E. C. et al. AMPK activation induces RALDH+ tolerogenic dendritic cells by rewiring glucose and lipid metabolism. J. Cell Biol. 223, e202401024 (2024).
+
+Article
+ 
+CAS
+ 
+PubMed
+ 
+PubMed Central
+ 
+Google Scholar
+ 
+
+Subramanian, A. et al. Gene set enrichment analysis: a knowledge-based approach for interpreting genome-wide expression profiles. Proc. Natl Acad. Sci. USA 102, 15545–15550 (2005).
+
+Article
+ 
+CAS
+ 
+PubMed
+ 
+PubMed Central
+ 
+Google Scholar
+ 
+
+Liberzon, A. et al. The Molecular Signatures Database (MSigDB) hallmark gene set collection. Cell Syst. 1, 417–425 (2015).
+
+Article
+ 
+CAS
+ 
+PubMed
+ 
+PubMed Central
+ 
+Google Scholar
+ 
+
+Castanza, A. S. et al. Extending support for mouse data in the Molecular Signatures Database (MSigDB). Nat. Methods 20, 1619–1620 (2023).
+
+Article
+ 
+CAS
+ 
+PubMed
+ 
+PubMed Central
+ 
+Google Scholar
+ 
+
+Ge, S. X., Jung, D. & Yao, R. ShinyGO: a graphical gene-set enrichment tool for animals and plants. Bioinformatics 36, 2628–2629 (2020).
+
+Article
+ 
+CAS
+ 
+PubMed
+ 
+PubMed Central
+ 
+Google Scholar
+ 
+
+Korsunsky, I. et al. Fast, sensitive and accurate integration of single-cell data with Harmony. Nat. Methods 16, 1289–1296 (2019).
+
+Article
+ 
+CAS
+ 
+PubMed
+ 
+PubMed Central
+ 
+Google Scholar
+ 
+
+Download references
+
+Acknowledgements
+M.J.M. acknowledges support from an American Cancer Society Research Scholar Grant (RSG-22-122-01-ET). E.L.H., A.M.M. and E.F. acknowledge support from an NSF Graduate Research Fellowship (award number 1845298). Data for this manuscript were generated in the University of Pennsylvania’s CDB Microscopy Core and Small Animal Imaging Core Facility (RRID:SCR_022385). Data were also generated in the Penn Cytomics and Cell Sorting Shared Resource Laboratory at the University of Pennsylvania (RRID: SCR_022376) and the Pancreatic Islet Cell Biology Core, which is supported by the University of Pennsylvania Diabetes Research Center (DRC).
+
+Author information
+Author notes
+These authors contributed equally: Dongyoon Kim, Ningqiang Gong.
+
+Authors and Affiliations
+Department of Bioengineering, University of Pennsylvania, Philadelphia, PA, USA
+
+Dongyoon Kim, Ningqiang Gong, Emily L. Han, Jinjin Wang, Ellie Feng, Amanda M. Murray, Qiangqiang Shi, So-Jeong Moon, Kaitlin Mrksich & Michael J. Mitchell
+
+Department of Pharmacy, Yonsei University, Incheon, Republic of Korea
+
+Dongyoon Kim
+
+Department of Integrative Biotechnology, Yonsei University, Incheon, Republic of Korea
+
+Dongyoon Kim
+
+Department of Medicine, University of Pennsylvania, Philadelphia, PA, USA
+
+Mohamad-Gabriel Alameh
+
+Department Key Laboratory of Structure-Based Drug Design and Discovery of Ministry of Education, Shenyang Pharmaceutical University, Shenyang, China
+
+Hanxun Wang
+
+Department of Chemistry, University of Pennsylvania, Philadelphia, PA, USA
+
+Il-Chul Yoon
+
+Department of HY-KIST Bio-Convergence, Hanyang University, Seoul, Republic of Korea
+
+So-Jeong Moon
+
+Penn Institute for RNA Innovation, Perelman School of Medicine, University of Pennsylvania, Philadelphia, PA, USA
+
+Drew Weissman & Michael J. Mitchell
+
+Cardiovascular Institute, Perelman School of Medicine, University of Pennsylvania, Philadelphia, PA, USA
+
+Drew Weissman & Michael J. Mitchell
+
+Institute for Immunology, Perelman School of Medicine, University of Pennsylvania, Philadelphia, PA, USA
+
+Michael J. Mitchell
+
+Institute for Regenerative Medicine, Perelman School of Medicine, University of Pennsylvania, Philadelphia, PA, USA
+
+Michael J. Mitchell
+
+Abramson Cancer Center, Perelman School of Medicine, University of Pennsylvania, Philadelphia, PA, USA
+
+Michael J. Mitchell
+
+Contributions
+D.K., N.G. and M.J.M. conceived the project and designed the experiments. The experiments were performed by D.K., N.G., M.-G.A., E.L.H., I.-C.Y., H.W., E.F., Q.S. and S.-J.M. and interpreted by all authors. D.K. prepared the figures and wrote the manuscript. D.K., E.L.H., J.W., A.M.M., E.F., K.M., D.W. and M.J.M. edited and revised the manuscript. All authors reviewed the manuscript and figures and approved the final version for submission.
+
+Corresponding author
+Correspondence to Michael J. Mitchell.
+
+Ethics declarations
+Competing interests
+D.K., N.G. and M.J.M. have filed a patent on the LNP technology discussed in this manuscript (application no. PCT/US25/51511). The remaining authors declare no competing interests.
+
+Peer review
+Peer review information
+Nature Materials thanks John T. Wilson and the other, anonymous, reviewer(s) for their contribution to the peer review of this work.
+
+Additional information
+Publisher’s note Springer Nature remains neutral with regard to jurisdictional claims in published maps and institutional affiliations.
+
+Supplementary information
+Supplementary Information (download PDF )
+Supplementary Notes 1–5, Figs. 1–39, methods, discussion and references.
+
+Reporting Summary (download PDF )
+Source data
+Source Data Fig. 1 (download XLSX )
+Statistical source data for the lipid-screening results.
+
+Source Data Fig. 2 (download XLSX )
+Statistical source data for the lipid-screening results.
+
+Source Data Fig. 3 (download XLSX )
+Statistical source data for the cellular metabolic activity results.
+
+Source Data Fig. 4 (download XLSX )
+Statistical source data for the in vivo biodistribution and safety analysis.
+
+Source Data Fig. 5 (download XLSX )
+Statistical source data for the SARS-CoV-2 vaccine study.
+
+Source Data Fig. 6 (download XLSX )
+Statistical source data for the cancer vaccine study.
+
+Source Data Fig. 3 (download JPG )
+Unprocessed western blots.
+
+Rights and permissions
+Springer Nature or its licensor (e.g. a society or other partner) holds exclusive rights to this article under a publishing agreement with the author(s) or other rightsholder(s); author self-archiving of the accepted manuscript version of this article is solely governed by the terms of such publishing agreement and applicable law.
+
+Reprints and permissions
+
+About this article
+Check for updates. Verify currency and authenticity via CrossMark
+Cite this article
+Kim, D., Gong, N., Alameh, MG. et al. Crosslinked ionizable lipids reprogram dendritic cell metabolism for potent mRNA vaccination. Nat. Mater. (2026). https://doi.org/10.1038/s41563-026-02512-x
+
+Download citation
+
+Received
+28 October 2024
+
+Accepted
+22 January 2026
+
+Published
+17 March 2026
+
+Version of record
+17 March 2026
+
+DOI
+https://doi.org/10.1038/s41563-026-02512-x
+
+Subjects
+Drug delivery
+Nanoparticles
+Access through your institution
+Buy or subscribe
+Sections
+Figures
+References
+Abstract
+Data availability
+References
+Acknowledgements
+Author information
+Ethics declarations
+Peer review
+Additional information
+Supplementary information
+Source data
+Rights and permissions
+About this article
+Advertisement
+
+Nature Materials (Nat. Mater.) ISSN 1476-4660 (online) ISSN 1476-1122 (print)
+nature.com footer links
+About Nature Portfolio
+About us
+Press releases
+Press office
+Contact us
+Discover content
+Journals A-Z
+Articles by subject
+protocols.io
+Nature Index
+Publishing policies
+Nature portfolio policies
+Open access
+Author & Researcher services
+Reprints & permissions
+Research data
+Language editing
+Scientific editing
+Nature Masterclasses
+Research Solutions
+Libraries & institutions
+Librarian service & tools
+Librarian portal
+Open research
+Recommend to library
+Advertising & partnerships
+Advertising
+Partnerships & Services
+Media kits
+Branded content
+Professional development
+Nature Awards
+Nature Careers
+Nature Conferences
+Regional websites
+Nature Africa
+Nature China
+Nature India
+Nature Japan
+Nature Middle East
+Privacy Policy Use of cookies Your privacy choices/Manage cookies Legal notice Accessibility statement Terms & Conditions Your US state privacy rights
+Springer Nature
+© 2026 Springer Nature Limited"
 2026-05-04 09:54:08,tasks_2026_0503_1953,10.64898/2026.03.02.708638,www.biorxiv.org,https://www.biorxiv.org/content/10.64898/2026.03.02.708638v1
+2026-05-15 15:17:32,tasks_2026_0514_1602,10.1016/j.cell.2026.01.012,www.cell.com,https://www.cell.com/cell/fulltext/S0092-8674(26)00099-1?_returnURL=https%3A%2F%2Flinkinghub.elsevier.com%2Fretrieve%2Fpii%2FS0092867426000991%3Fshowall%3Dtrue
 2026-05-03 20:01:53,tasks_2026_0503_1953,10.2147/IJN.S577606,www.dovepress.com,https://www.dovepress.com/intraperitoneal-co-delivery-of-claudin18241bb-and-epcamcd3-bispecific--peer-reviewed-fulltext-article-IJN
 2026-05-03 20:00:43,tasks_2026_0503_1953,10.3390/membranes16030089,www.mdpi.com,https://www.mdpi.com/2077-0375/16/3/89
 2026-05-04 09:55:22,tasks_2026_0503_1953,10.1038/s41563-026-02512-x,www.nature.com,https://www.nature.com/articles/s41563-026-02512-x

@@ -34,7 +34,7 @@ def download(
             "failed_reason": f"sciencedirect域名未支持: {host or 'unknown'}",
         }
 
-    paper_url = _open_paper_pdf_from_rendered_dom(resolved_url)
+    paper_url = _open_paper_pdf_from_rendered_dom()
     if not paper_url:
         logger.warning("[论文下载] sciencedirect未找到论文下载链接")
         return {
@@ -118,23 +118,20 @@ def download_si(
     return True, si_file
 
 
-def _open_paper_pdf_from_rendered_dom(resolved_url: str) -> bool:
-    # target = str(resolved_url or "").strip()
-    # if not target:
-    #     return ""
-    # BrowserController().open_tab(target)
-    # time.sleep(30)
+def _open_paper_pdf_from_rendered_dom() -> bool:
+    time.sleep(5)
     js = (
         "javascript:(()=>{"
-        "const a=document.querySelector('a[aria-label=\"View PDF. Opens in a new window.\"]');"
+        "const a=document.querySelector('a[href*=\"/pdfft\"]');"
         "if(a&&a.href){window.location.href=a.href;}"
         "})()"
     )
     gui.hotkey("focus_address_bar")
     time.sleep(0.5)
     gui.write(js, interval=0.01)
+    time.sleep(3)
     gui.press("enter")
-    time.sleep(15)
+    time.sleep(10)
     current = utils.get_current_url().strip()
     if "pdf.sciencedirectassets.com" not in current.lower():
         return False

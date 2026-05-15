@@ -479,9 +479,42 @@ def _build_arg_parser() -> argparse.ArgumentParser:
     return parser
 
 
-if __name__ == "__main__":
+def run_task_command(task: str, parent_pid: int = 0, project_root: str | Path | None = None) -> int:
     configure_logging()
+    setup_task_logging(task)
+    executor: TaskExecutor | None = None
+    try:
+        executor = TaskExecutor(project_root=project_root)
+        executor.run(task, parent_pid=max(0, int(parent_pid)))
+        return 0
+    except BaseException as exc:
+        logger.exception(f"[任务执行] 执行器异常退出: {exc}")
+        if executor is not None:
+            _mark_task_crashed(executor, task)
+        return 1
+
+
+def _mark_task_crashed(executor: TaskExecutor, task_name_or_path: str) -> None:
+    try:
+        task_path = executor._resolve_task_path(task_name_or_path)
+        task_name = task_path.stem
+        task_csv = CSVManager(task_path)
+        rows = task_csv.get_all()
+        fields = executor._resolve_task_fields(task_csv.fieldnames)
+        total_count = sum(1 for row in rows if str(row.get(fields["doi"], "") or "").strip())
+        success_count = executor._count_status(rows, fields["status"], "success")
+        failed_count = executor._count_status(rows, fields["status"], "failed")
+        executor._update_statistic(
+            task_name,
+            status="failed",
+            total_count=total_count,
+            success_count=success_count,
+            failed_count=failed_count,
+        )
+    except Exception as exc:
+        logger.warning(f"[任务执行] 写入崩溃状态失败: {exc}")
+
+
+if __name__ == "__main__":
     args = _build_arg_parser().parse_args()
-    setup_task_logging(args.task)
-    executor = TaskExecutor()
-    executor.run(args.task, parent_pid=max(0, int(args.parent_pid)))
+    raise SystemExit(run_task_command(args.task, parent_pid=args.parent_pid))

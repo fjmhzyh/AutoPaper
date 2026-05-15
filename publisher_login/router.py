@@ -3,7 +3,7 @@ from __future__ import annotations
 import logging
 from urllib.parse import urlparse
 
-from publisher_login import acs, nature, rsc, sciencedirect, springer, tandfonline, wiley
+from publisher_login import acs, cell, nature, rsc, sciencedirect, springer, tandfonline, wiley
 
 
 logger = logging.getLogger(__name__)
@@ -36,6 +36,13 @@ LOGIN_SITES = [
         "match_suffixes": ("sciencedirect.com",),
         "open_url": "https://www.sciencedirect.com",
         "module": sciencedirect,
+    },
+    {
+        "id": "cell",
+        "label": "cell",
+        "match_suffixes": ("cell.com",),
+        "open_url": "https://www.cell.com",
+        "module": cell,
     },
     {
         "id": "acs",

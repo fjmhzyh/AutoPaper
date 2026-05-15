@@ -61,3 +61,45 @@ win: %LOCALAPPDATA%\\AutoPaper\\download
 5. 打开订阅链接
 6. 获取里面的doi
 7. 生成rss任务，命名格式为rss-keyword-mmdd,比如rss-pcl-0507,重复时rss-pcl-0507-02。
+
+
+# 出版商下载信息
+mdpi,plos,biorxiv,thno,beilstein,frontiersin,dovepress可以通过meta标签 name=citation_pdf_url 在源码中获得下载地址
+
+## mdpi - 打开下载地址浏览器会自动下载
+- 原文地址 https://www.mdpi.com/2077-0375/16/3/89
+- 下载地址 https://www.mdpi.com/2077-0375/16/3/89/pdf
+
+## plos - 打开下载地址浏览器会自动下载
+- 原文地址 https://journals.plos.org/plosntds/article?id=10.1371/journal.pntd.0012999
+- 下载地址 https://journals.plos.org/plosntds/article/file?id=10.1371/journal.pntd.0012999&type=printable 
+
+# biorxiv - 打开下载地址浏览器不会自动下载，要加上download=true才会自动下载
+- 原文地址 https://www.biorxiv.org/content/10.64898/2026.03.02.708638v1
+- 下载地址 https://www.biorxiv.org/content/biorxiv/early/2026/03/04/2026.03.02.708638.full.pdf
+
+# thno 打开下载地址浏览器不会自动下载，加上download=true也不会自动下载，要调用打印下载
+- 原文地址 https://www.thno.org/v15p9643.htm
+- 下载地址 https://www.thno.org/v15p9643.pdf
+
+# beilstein 打开下载地址浏览器不会自动下载，加上download=true也不会自动下载，要调用打印下载
+- 原文地址 https://www.beilstein-journals.org/bjnano/articles/16/57
+- 下载地址 https://www.beilstein-journals.org/bjnano/content/pdf/2190-4286-16-57.pdf
+
+
+## frontiersin - 打开下载地址浏览器会自动下载
+- 原文地址 https://www.frontiersin.org/journals/bioengineering-and-biotechnology/articles/10.3389/fbioe.2025.1669104/full
+- 下载地址 https://www.frontiersin.org/journals/bioengineering-and-biotechnology/articles/10.3389/fbioe.2025.1669104/pdf
+
+
+# dovepress 打开下载地址浏览器不会自动下载，加上download=true也不会自动下载，要调用打印下载
+- 原文地址 https://www.dovepress.com/intraperitoneal-co-delivery-of-claudin18241bb-and-epcamcd3-bispecific--peer-reviewed-fulltext-article-IJN
+- 下载地址 https://www.dovepress.com/article/download/113244?download=true
+
+# sagepub 有收费的文章，也有免费文章，浙大目前没有订阅。免费文章在原文地址的/doi/后面加上pdf/,末尾加上?download=true可以直接下载。收费文章，拼接完下载地址打开以后，会跳转到https://journals.sagepub.com/doi/abs/10.1177/10430342251412392
+- 原文地址 https://journals.sagepub.com/doi/10.1177/2325967117700077
+- 下载地址 https://journals.sagepub.com/doi/pdf/10.1177/2325967117700077?download=true
+
+# PNAS - 将 doi 替换为 doi/pdf
+- 原文链接 https://pnas.org/doi/10.1073/pnas.2519819123
+- 下载链接 https://www.pnas.org/doi/pdf/10.1073/pnas.2519819123?download=true

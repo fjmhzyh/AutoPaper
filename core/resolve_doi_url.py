@@ -14,6 +14,7 @@ try:
     from core.browser_controller import BrowserController
     from core.logger import configure_logging
     from core.utils import get_current_url
+    from publisher_login import sciencedirect
 except ModuleNotFoundError:
     PROJECT_ROOT = Path(__file__).resolve().parents[1]
     if str(PROJECT_ROOT) not in sys.path:
@@ -23,6 +24,7 @@ except ModuleNotFoundError:
     from core.browser_controller import BrowserController
     from core.logger import configure_logging
     from core.utils import get_current_url
+    from publisher_login import sciencedirect
 
 
 logger = logging.getLogger(__name__)
@@ -55,6 +57,7 @@ def resolve_doi_url(doi: str) -> str | None:
         logger.info("[地址解析] 打开网页成功")
         logger.info(f"[地址解析] 等待网页加载{int(page_load_sec)}秒")
         time.sleep(page_load_sec)
+        _handle_elsevier_authorization()
 
         loaded, resolved_url = check_page_loaded(get_current_url)
         if loaded and resolved_url:
@@ -65,6 +68,7 @@ def resolve_doi_url(doi: str) -> str | None:
         _refresh_page()
         logger.info(f"[地址解析] 等待网页加载{int(page_load_sec)}秒")
         time.sleep(page_load_sec)
+        _handle_elsevier_authorization()
 
         loaded, resolved_url = check_page_loaded(get_current_url)
         if loaded and resolved_url:
@@ -92,7 +96,15 @@ def check_page_loaded(read_current_url) -> tuple[bool, str | None]:
         return False, None
     if _is_doi_redirect_host(second_url):
         return False, None
+    if sciencedirect.is_elsevier_authorization_url(second_url):
+        return False, None
     return True, second_url
+
+
+def _handle_elsevier_authorization() -> None:
+    current_url = get_current_url()
+    if sciencedirect.is_elsevier_authorization_url(current_url):
+        sciencedirect.handle_elsevier_authorization_page()
 
 
 def _refresh_page() -> None:

@@ -10,8 +10,10 @@ from publisher_download import (
     acs,
     biomedcentral,
     cdnsciencepub,
+    cell,
     hindawi,
     ieee,
+    generic,
     iopscience,
     jospt,
     literatum,
@@ -45,9 +47,11 @@ DOWNLOADERS = {
     "www.hindawi.com": hindawi.download,
     "www.science.org": science.download,
     "www.sciencedirect.com": sciencedirect.download,
+    "www.cell.com": cell.download,
     "www.jospt.org": jospt.download,
     "www.thieme-connect.de": thieme.download,
     "cdnsciencepub.com": cdnsciencepub.download,
+    "pnas.org": pnas.download,
     "www.pnas.org": pnas.download,
     "dom-pubs.pericles-prod.literatumonline.com": literatum.download,
     "www.nature.com": nature.download,
@@ -146,6 +150,18 @@ def download_by_url(
             item_index=item_index,
             project_root=project_root,
         )
+
+    logger.info(f"[论文下载] 未匹配专用下载器，尝试通用下载，域名: {host or 'unknown'}")
+    generic_result = generic.download(
+        resolved_url,
+        html_content,
+        doi,
+        task_name=task_name,
+        item_index=item_index,
+        project_root=project_root,
+    )
+    if generic_result.get("paper_ok") or generic.supports(resolved_url):
+        return generic_result
 
     logger.info(f"[论文下载] 未匹配下载器，标记失败，域名: {host or 'unknown'}")
     try:

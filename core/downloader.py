@@ -89,7 +89,7 @@ def print_download(
     time.sleep(5)
     gui.hotkey("select_all")
     time.sleep(1)
-    gui.write(target_name, interval=0.03)
+    _paste_text(target_name)
 
     time.sleep(2)
     gui.press("enter")
@@ -176,7 +176,14 @@ def _normalize_doi_for_name(doi: str) -> str:
         return "unknown_doi"
     normalized = re.sub(r"[^0-9A-Za-z._-]+", "_", text)
     normalized = normalized.strip("._-")
-    return normalized or "unknown_doi"
+    return normalized.lower() or "unknown_doi"
+
+
+def _paste_text(text: str) -> None:
+    import pyperclip  # type: ignore
+
+    pyperclip.copy(str(text or ""))
+    gui.hotkey("paste")
 
 
 def _normalize_download_suffix(raw_suffix: str | None) -> str:
