@@ -120,17 +120,23 @@ def download_si(
 
 def _open_paper_pdf_from_rendered_dom() -> bool:
     time.sleep(5)
-    js = (
-        "javascript:(()=>{"
-        "const a=document.querySelector('a[href*=\"/pdfft\"]');"
-        "if(a&&a.href){window.location.href=a.href;}"
-        "})()"
-    )
-    gui.hotkey("focus_address_bar")
+    utils.search_keyword_and_foucus("download full issue")
     time.sleep(0.5)
-    gui.write(js, interval=0.01)
-    time.sleep(3)
+    gui.hotkey("shift_tab")
+    time.sleep(0.5)
     gui.press("enter")
+
+    # js = (
+    #     "javascript:(()=>{"
+    #     "const a=document.querySelector('a[href*=\"/pdfft\"]');"
+    #     "if(a&&a.href){window.location.href=a.href;}"
+    #     "})()"
+    # )
+    # gui.hotkey("focus_address_bar")
+    # time.sleep(0.5)
+    # gui.write(js, interval=0.01)
+    # time.sleep(3)
+    # gui.press("enter")
     time.sleep(10)
     current = utils.get_current_url().strip()
     if "pdf.sciencedirectassets.com" not in current.lower():

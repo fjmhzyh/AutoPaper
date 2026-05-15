@@ -27,7 +27,7 @@ def login(resolved_url: str) -> bool:
         ]
     )
     
-    logger.info(f"zj:{access_through} issue:{download_full_issue} pdf:{purchase_pdf}")
+    logger.info(f"access_through:{access_through} download_full_issue:{download_full_issue} purchase_pdf:{purchase_pdf}")
 
     # 如果存在access_through，则需要登陆下载
     if access_through and purchase_pdf:
