@@ -24,6 +24,9 @@ $ReleaseDir = & $PythonExe scripts/make_release.py prepare --platform win
 
 Write-Host "[win] building exe via PyInstaller..."
 & $PyInstallerExe --noconfirm --clean build/autopaper.spec
+if ($LASTEXITCODE -ne 0) {
+    throw "[win] PyInstaller failed with exit code $LASTEXITCODE"
+}
 
 $ExePath = Join-Path $Root "dist\AutoPaper\AutoPaper.exe"
 if (-not (Test-Path $ExePath)) {
@@ -34,16 +37,21 @@ if (-not (Test-Path $WorkerPath)) {
     throw "[win] build failed: worker not found at $WorkerPath"
 }
 $ConfigPath = Join-Path $Root "dist\AutoPaper\config"
-if (-not (Test-Path $ConfigPath)) {
-    throw "[win] build failed: config folder missing at $ConfigPath"
+$InternalConfigPath = Join-Path $Root "dist\AutoPaper\_internal\config"
+if (-not (Test-Path $ConfigPath) -and -not (Test-Path $InternalConfigPath)) {
+    throw "[win] build failed: config folder missing at $ConfigPath or $InternalConfigPath"
 }
 $PhotosPath = Join-Path $Root "dist\AutoPaper\photos"
-if (-not (Test-Path $PhotosPath)) {
-    throw "[win] build failed: photos folder missing at $PhotosPath"
+$InternalPhotosPath = Join-Path $Root "dist\AutoPaper\_internal\photos"
+if (-not (Test-Path $PhotosPath) -and -not (Test-Path $InternalPhotosPath)) {
+    throw "[win] build failed: photos folder missing at $PhotosPath or $InternalPhotosPath"
 }
 
 Write-Host "[win] building installer via Inno Setup..."
-& $ISCC "packaging\windows\autopaper.iss" "/DMyAppVersion=$Version" "/DMyReleaseDir=$ReleaseDir"
+& $ISCC "packaging\windows\autopaper.iss" "/DMyAppVersion=$Version" "/DMyReleaseDir=$ReleaseDir" "/DMyProjectRoot=$Root"
+if ($LASTEXITCODE -ne 0) {
+    throw "[win] Inno Setup failed with exit code $LASTEXITCODE"
+}
 
 Write-Host "[win] done"
 Write-Host "EXE: $ExePath"
