@@ -78,7 +78,9 @@ def print_download(
 
     safe_doi = _normalize_doi_for_name(doi)
     filename = f"{prefix}_{max(1, int(item_index)):02d}_{safe_doi}.pdf"
-    target_name = _dedupe_target(target_dir, filename).name
+    target = _dedupe_target(target_dir, filename)
+    target_name = target.name
+    save_text = str(target) if sys.platform.startswith("win") else target_name
     before_names = snapshot_download_names()
 
     time.sleep(20)
@@ -89,13 +91,18 @@ def print_download(
     time.sleep(5)
     gui.hotkey("select_all")
     time.sleep(1)
-    _paste_text(target_name)
+    _paste_text(save_text)
 
     time.sleep(2)
     gui.press("enter")
     time.sleep(1)
     gui.press("enter", presses=3, interval=0.2)
     gui.hotkey("close_tab")
+    if sys.platform.startswith("win") and _wait_file_exists(target, 30.0, 0.5):
+        saved_path = _to_output_path(root, target)
+        logger.info(f"[论文下载] 打印保存到任务目录 - {saved_path}")
+        return saved_path
+
     moved_path = move_latest_download_to_task(
         project_root=root,
         task_name=task_name,

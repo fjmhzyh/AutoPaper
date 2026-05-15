@@ -137,7 +137,7 @@ def _open_paper_pdf_from_rendered_dom() -> bool:
     # gui.write(js, interval=0.01)
     # time.sleep(3)
     # gui.press("enter")
-    time.sleep(10)
+    time.sleep(20)
     current = utils.get_current_url().strip()
     if "pdf.sciencedirectassets.com" not in current.lower():
         return False
