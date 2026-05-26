@@ -267,13 +267,15 @@ class TaskExecutor:
         else:
             cmd = [sys.executable, "-m", "core.yanzhen", "--parent-pid", str(getpid())]
         try:
-            self._yanzhen_proc = subprocess.Popen(
-                cmd,
-                cwd=str(self.project_root),
-                stdout=None,
-                stderr=None,
-                text=True,
-            )
+            popen_kwargs = {
+                "cwd": str(self.project_root),
+                "stdout": None,
+                "stderr": None,
+                "text": True,
+            }
+            if os.name == "nt":
+                popen_kwargs["creationflags"] = subprocess.CREATE_NO_WINDOW
+            self._yanzhen_proc = subprocess.Popen(cmd, **popen_kwargs)
         except Exception as exc:
             logger.error(f"[验证码] 启动失败: {exc}")
             raise RuntimeError("验证码进程启动失败") from exc

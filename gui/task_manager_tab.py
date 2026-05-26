@@ -450,10 +450,10 @@ class TaskManagerTab(tk.Frame):
             return
         try:
             cmd = self._build_executor_command(task_path)
-            self._executor_proc = subprocess.Popen(
-                cmd,
-                cwd=str(self.project_root),
-            )
+            popen_kwargs = {"cwd": str(self.project_root)}
+            if os.name == "nt":
+                popen_kwargs["creationflags"] = subprocess.CREATE_NO_WINDOW
+            self._executor_proc = subprocess.Popen(cmd, **popen_kwargs)
             self._running_task_name = Path(task_name).stem
             self._load_rows()
             if callable(self.on_tasks_changed):
