@@ -58,7 +58,7 @@ if (-not (Test-Path $PhotosPath) -and -not (Test-Path $InternalPhotosPath)) {
 }
 
 Write-Host "[win] building installer via Inno Setup..."
-& $ISCC "packaging\windows\autopaper.iss" "/DMyAppVersion=$Version" "/DMyReleaseDir=$ReleaseDir" "/DMyProjectRoot=$Root"
+& $ISCC "packaging\windows\autopaper.iss" "/DMyAppVersion=""$Version"""
 if ($LASTEXITCODE -ne 0) {
     throw "[win] Inno Setup failed with exit code $LASTEXITCODE"
 }
