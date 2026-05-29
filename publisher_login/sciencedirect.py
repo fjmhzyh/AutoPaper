@@ -70,6 +70,7 @@ def handle_elsevier_authorization_page(max_rounds: int = 3) -> bool:
             gui.press('enter')
 
         time.sleep(15)
+        gui.press('enter')
         current_url = utils.get_current_url()
         if not is_elsevier_authorization_url(current_url):
             logger.info("[网站登陆] Elsevier 授权确认完成")

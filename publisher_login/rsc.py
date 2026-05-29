@@ -51,7 +51,7 @@ def _login_use_hotkey() -> bool:
 
     # 点击浙江大学
     utils.search_keyword_and_foucus("zhejiang university")
-    gui.press('enter',2,0.2)
+    gui.press('enter')
 
     # 等待页面加载
     time.sleep(20)
